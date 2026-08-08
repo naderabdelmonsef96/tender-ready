@@ -23,6 +23,12 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as AuthenticatedAdminWorkflowsRouteImport } from './routes/_authenticated/admin.workflows'
 import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_authenticated/settings.company'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
+import { Route as AuthenticatedWorkbenchIntakeRouteImport } from './routes/_authenticated/workbench.intake'
+import { Route as AuthenticatedWorkbenchPortfolioRouteImport } from './routes/_authenticated/workbench.portfolio'
+import { Route as AuthenticatedWorkbenchPricingRouteImport } from './routes/_authenticated/workbench.pricing'
+import { Route as AuthenticatedWorkbenchRequirementsRouteImport } from './routes/_authenticated/workbench.requirements'
+import { Route as AuthenticatedWorkbenchReviewRouteImport } from './routes/_authenticated/workbench.review'
+import { Route as AuthenticatedWorkbenchSourcingRouteImport } from './routes/_authenticated/workbench.sourcing'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -99,6 +105,42 @@ const AuthenticatedSettingsUsersRoute =
     path: '/settings/users',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkbenchIntakeRoute =
+  AuthenticatedWorkbenchIntakeRouteImport.update({
+    id: '/workbench/intake',
+    path: '/workbench/intake',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkbenchPortfolioRoute =
+  AuthenticatedWorkbenchPortfolioRouteImport.update({
+    id: '/workbench/portfolio',
+    path: '/workbench/portfolio',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkbenchPricingRoute =
+  AuthenticatedWorkbenchPricingRouteImport.update({
+    id: '/workbench/pricing',
+    path: '/workbench/pricing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkbenchRequirementsRoute =
+  AuthenticatedWorkbenchRequirementsRouteImport.update({
+    id: '/workbench/requirements',
+    path: '/workbench/requirements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkbenchReviewRoute =
+  AuthenticatedWorkbenchReviewRouteImport.update({
+    id: '/workbench/review',
+    path: '/workbench/review',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkbenchSourcingRoute =
+  AuthenticatedWorkbenchSourcingRouteImport.update({
+    id: '/workbench/sourcing',
+    path: '/workbench/sourcing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +156,12 @@ export interface FileRoutesByFullPath {
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
+  '/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
+  '/workbench/portfolio': typeof AuthenticatedWorkbenchPortfolioRoute
+  '/workbench/pricing': typeof AuthenticatedWorkbenchPricingRoute
+  '/workbench/requirements': typeof AuthenticatedWorkbenchRequirementsRoute
+  '/workbench/review': typeof AuthenticatedWorkbenchReviewRoute
+  '/workbench/sourcing': typeof AuthenticatedWorkbenchSourcingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -129,6 +177,12 @@ export interface FileRoutesByTo {
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
+  '/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
+  '/workbench/portfolio': typeof AuthenticatedWorkbenchPortfolioRoute
+  '/workbench/pricing': typeof AuthenticatedWorkbenchPricingRoute
+  '/workbench/requirements': typeof AuthenticatedWorkbenchRequirementsRoute
+  '/workbench/review': typeof AuthenticatedWorkbenchReviewRoute
+  '/workbench/sourcing': typeof AuthenticatedWorkbenchSourcingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -146,6 +200,12 @@ export interface FileRoutesById {
   '/_authenticated/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
+  '/_authenticated/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
+  '/_authenticated/workbench/portfolio': typeof AuthenticatedWorkbenchPortfolioRoute
+  '/_authenticated/workbench/pricing': typeof AuthenticatedWorkbenchPricingRoute
+  '/_authenticated/workbench/requirements': typeof AuthenticatedWorkbenchRequirementsRoute
+  '/_authenticated/workbench/review': typeof AuthenticatedWorkbenchReviewRoute
+  '/_authenticated/workbench/sourcing': typeof AuthenticatedWorkbenchSourcingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -163,6 +223,12 @@ export interface FileRouteTypes {
     | '/admin/workflows'
     | '/settings/company'
     | '/settings/users'
+    | '/workbench/intake'
+    | '/workbench/portfolio'
+    | '/workbench/pricing'
+    | '/workbench/requirements'
+    | '/workbench/review'
+    | '/workbench/sourcing'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -178,6 +244,12 @@ export interface FileRouteTypes {
     | '/admin/workflows'
     | '/settings/company'
     | '/settings/users'
+    | '/workbench/intake'
+    | '/workbench/portfolio'
+    | '/workbench/pricing'
+    | '/workbench/requirements'
+    | '/workbench/review'
+    | '/workbench/sourcing'
   id:
     | '__root__'
     | '/'
@@ -194,6 +266,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workflows'
     | '/_authenticated/settings/company'
     | '/_authenticated/settings/users'
+    | '/_authenticated/workbench/intake'
+    | '/_authenticated/workbench/portfolio'
+    | '/_authenticated/workbench/pricing'
+    | '/_authenticated/workbench/requirements'
+    | '/_authenticated/workbench/review'
+    | '/_authenticated/workbench/sourcing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -307,6 +385,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workbench/intake': {
+      id: '/_authenticated/workbench/intake'
+      path: '/workbench/intake'
+      fullPath: '/workbench/intake'
+      preLoaderRoute: typeof AuthenticatedWorkbenchIntakeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workbench/portfolio': {
+      id: '/_authenticated/workbench/portfolio'
+      path: '/workbench/portfolio'
+      fullPath: '/workbench/portfolio'
+      preLoaderRoute: typeof AuthenticatedWorkbenchPortfolioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workbench/pricing': {
+      id: '/_authenticated/workbench/pricing'
+      path: '/workbench/pricing'
+      fullPath: '/workbench/pricing'
+      preLoaderRoute: typeof AuthenticatedWorkbenchPricingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workbench/requirements': {
+      id: '/_authenticated/workbench/requirements'
+      path: '/workbench/requirements'
+      fullPath: '/workbench/requirements'
+      preLoaderRoute: typeof AuthenticatedWorkbenchRequirementsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workbench/review': {
+      id: '/_authenticated/workbench/review'
+      path: '/workbench/review'
+      fullPath: '/workbench/review'
+      preLoaderRoute: typeof AuthenticatedWorkbenchReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workbench/sourcing': {
+      id: '/_authenticated/workbench/sourcing'
+      path: '/workbench/sourcing'
+      fullPath: '/workbench/sourcing'
+      preLoaderRoute: typeof AuthenticatedWorkbenchSourcingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -317,6 +437,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminWorkflowsRoute: typeof AuthenticatedAdminWorkflowsRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
+  AuthenticatedWorkbenchIntakeRoute: typeof AuthenticatedWorkbenchIntakeRoute
+  AuthenticatedWorkbenchPortfolioRoute: typeof AuthenticatedWorkbenchPortfolioRoute
+  AuthenticatedWorkbenchPricingRoute: typeof AuthenticatedWorkbenchPricingRoute
+  AuthenticatedWorkbenchRequirementsRoute: typeof AuthenticatedWorkbenchRequirementsRoute
+  AuthenticatedWorkbenchReviewRoute: typeof AuthenticatedWorkbenchReviewRoute
+  AuthenticatedWorkbenchSourcingRoute: typeof AuthenticatedWorkbenchSourcingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -326,6 +452,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminWorkflowsRoute: AuthenticatedAdminWorkflowsRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
+  AuthenticatedWorkbenchIntakeRoute: AuthenticatedWorkbenchIntakeRoute,
+  AuthenticatedWorkbenchPortfolioRoute: AuthenticatedWorkbenchPortfolioRoute,
+  AuthenticatedWorkbenchPricingRoute: AuthenticatedWorkbenchPricingRoute,
+  AuthenticatedWorkbenchRequirementsRoute:
+    AuthenticatedWorkbenchRequirementsRoute,
+  AuthenticatedWorkbenchReviewRoute: AuthenticatedWorkbenchReviewRoute,
+  AuthenticatedWorkbenchSourcingRoute: AuthenticatedWorkbenchSourcingRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
