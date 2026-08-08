@@ -92,7 +92,7 @@ function ConsentPage() {
   const [error, setError] = useState<string | null>(null);
 
   const clientName = details?.client?.name ?? "an application";
-  const scopes = (details?.scope ?? "").split(/\s+/).filter(Boolean);
+  const scopes: string[] = (details?.scope ?? "").split(/\s+/).filter(Boolean);
 
   async function decide(approve: boolean) {
     setBusy(true);
