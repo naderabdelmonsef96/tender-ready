@@ -84,6 +84,9 @@ function Page() {
   const canEdit = role === "org_admin" || role === "proposal_engineer";
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
   const [replaceFileId, setReplaceFileId] = useState<string | null>(null);
   const [replaceReason, setReplaceReason] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -158,50 +161,72 @@ function Page() {
     });
   }
 
-  async function onUpload(file: File) {
+  async function uploadOne(file: File, isReplace: boolean) {
     if (!activeOrganizationId || !tenderId) return;
-    setUploading(true);
-    try {
-      const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]+/g, "_");
-      const path = `${activeOrganizationId}/${tenderId}/${crypto.randomUUID()}-${safeName}`;
-      const upload = await supabase.storage.from("tender-files").upload(path, file, {
-        contentType: file.type || "application/octet-stream",
-      });
-      if (upload.error) throw new Error(upload.error.message);
+    const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]+/g, "_");
+    const path = `${activeOrganizationId}/${tenderId}/${crypto.randomUUID()}-${safeName}`;
+    const upload = await supabase.storage.from("tender-files").upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+    });
+    if (upload.error) throw new Error(upload.error.message);
 
-      const result = await register({
-        data: {
-          organizationId: activeOrganizationId,
-          tenderId,
-          storagePath: path,
-          originalName: file.name,
-          mimeType: file.type || null,
-          byteSize: file.size,
-          replaceFileId,
-          replaceReason: replaceFileId ? replaceReason || null : null,
-        },
-      });
-      if (result.duplicate) toast.warning(t("intake.duplicate"));
-      else toast.success(t("register.saved"));
+    const result = await register({
+      data: {
+        organizationId: activeOrganizationId,
+        tenderId,
+        storagePath: path,
+        originalName: file.name,
+        mimeType: file.type || null,
+        byteSize: file.size,
+        replaceFileId: isReplace ? replaceFileId : null,
+        replaceReason: isReplace ? replaceReason || null : null,
+      },
+    });
+    if (result.duplicate) {
+      toast.warning(`${file.name}: ${t("intake.duplicate")}`);
+      return;
+    }
+    ingestMutation.mutate({
+      data: {
+        organizationId: activeOrganizationId,
+        documentVersionId: result.documentVersionId,
+        idempotencyKey: `extract:${result.documentVersionId}`,
+      },
+    });
+  }
+
+  async function onUpload(files: FileList | File[]) {
+    if (!activeOrganizationId || !tenderId) return;
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    const isReplace = Boolean(replaceFileId);
+    const selected = isReplace ? list.slice(0, 1) : list;
+    setUploading(true);
+    setUploadProgress({ done: 0, total: selected.length });
+    let ok = 0;
+    try {
+      for (const [index, file] of selected.entries()) {
+        try {
+          await uploadOne(file, isReplace);
+          ok += 1;
+        } catch (error) {
+          toast.error(
+            `${file.name}: ${error instanceof Error ? error.message : t("common.unexpectedError")}`,
+          );
+        }
+        setUploadProgress({ done: index + 1, total: selected.length });
+      }
+      if (ok > 0) toast.success(t("register.saved"));
       setReplaceFileId(null);
       setReplaceReason("");
       invalidate();
-      if (!result.duplicate) {
-        ingestMutation.mutate({
-          data: {
-            organizationId: activeOrganizationId,
-            documentVersionId: result.documentVersionId,
-            idempotencyKey: `extract:${result.documentVersionId}`,
-          },
-        });
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("common.unexpectedError"));
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       if (fileInput.current) fileInput.current.value = "";
     }
   }
+
 
   async function onDownload(storagePath: string) {
     if (!activeOrganizationId) return;
@@ -451,11 +476,13 @@ function Page() {
                   <input
                     ref={fileInput}
                     type="file"
+                    multiple={!replaceFileId}
+                    accept=".xlsx,.xls,.csv,.pdf"
                     className="hidden"
                     aria-label={t("intake.upload")}
                     onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void onUpload(file);
+                      const files = event.target.files;
+                      if (files && files.length > 0) void onUpload(files);
                     }}
                   />
                   <Button
@@ -463,8 +490,13 @@ function Page() {
                     disabled={uploading || ingestMutation.isPending}
                   >
                     <FileUp className="me-2 h-4 w-4" aria-hidden="true" />
-                    {uploading ? t("intake.uploading") : t("intake.upload")}
+                    {uploading
+                      ? uploadProgress
+                        ? `${t("intake.uploading")} ${uploadProgress.done}/${uploadProgress.total}`
+                        : t("intake.uploading")
+                      : t("intake.upload")}
                   </Button>
+
                 </>
               ) : (
                 <span className="text-xs text-muted-foreground">{t("intake.onlyMakers")}</span>
@@ -490,6 +522,33 @@ function Page() {
                 </div>
               </div>
             )}
+
+            {canEdit && !replaceFileId && (
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragActive(false);
+                  if (event.dataTransfer.files.length > 0) void onUpload(event.dataTransfer.files);
+                }}
+                onClick={() => fileInput.current?.click()}
+                className={`mb-3 cursor-pointer rounded-xl border border-dashed p-4 text-center text-xs transition-colors ${
+                  dragActive
+                    ? "border-primary bg-primary/5 text-foreground"
+                    : "border-border text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                {uploading && uploadProgress
+                  ? `${t("intake.uploading")} ${uploadProgress.done}/${uploadProgress.total}`
+                  : t("intake.filesHint")}
+              </div>
+            )}
+
+
 
             {intake.versions.length === 0 ? (
               <EmptyState message={t("intake.noFiles")} />
