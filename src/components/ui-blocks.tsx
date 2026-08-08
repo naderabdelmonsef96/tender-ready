@@ -89,7 +89,7 @@ const decisionTone: Record<DecisionState, string> = {
   draft: "bg-muted text-muted-foreground",
   submitted: "bg-info/10 text-info",
   in_review: "bg-info/10 text-info",
-  changes_requested: "bg-warning/15 text-warning-strong",
+  changes_requested: "bg-warning/20 text-foreground",
   approved: "bg-success/12 text-success",
   rejected: "bg-destructive/12 text-destructive",
   superseded: "bg-muted text-muted-foreground",
