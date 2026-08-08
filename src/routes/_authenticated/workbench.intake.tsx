@@ -476,11 +476,13 @@ function Page() {
                   <input
                     ref={fileInput}
                     type="file"
+                    multiple={!replaceFileId}
+                    accept=".xlsx,.xls,.csv,.pdf"
                     className="hidden"
                     aria-label={t("intake.upload")}
                     onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void onUpload(file);
+                      const files = event.target.files;
+                      if (files && files.length > 0) void onUpload(files);
                     }}
                   />
                   <Button
@@ -488,8 +490,13 @@ function Page() {
                     disabled={uploading || ingestMutation.isPending}
                   >
                     <FileUp className="me-2 h-4 w-4" aria-hidden="true" />
-                    {uploading ? t("intake.uploading") : t("intake.upload")}
+                    {uploading
+                      ? uploadProgress
+                        ? `${t("intake.uploading")} ${uploadProgress.done}/${uploadProgress.total}`
+                        : t("intake.uploading")
+                      : t("intake.upload")}
                   </Button>
+
                 </>
               ) : (
                 <span className="text-xs text-muted-foreground">{t("intake.onlyMakers")}</span>
