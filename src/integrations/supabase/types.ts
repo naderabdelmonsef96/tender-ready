@@ -14,6 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
+      approval_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["decision_state"]
+          id: string
+          note: string | null
+          organization_id: string
+          stage: Database["public"]["Enums"]["tender_stage"]
+          task_id: string
+          tender_id: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["decision_state"]
+          id?: string
+          note?: string | null
+          organization_id: string
+          stage: Database["public"]["Enums"]["tender_stage"]
+          task_id: string
+          tender_id: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: Database["public"]["Enums"]["decision_state"]
+          id?: string
+          note?: string | null
+          organization_id?: string
+          stage?: Database["public"]["Enums"]["tender_stage"]
+          task_id?: string
+          tender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_decisions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_decisions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "approval_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_decisions_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_tasks: {
+        Row: {
+          approver_role: Database["public"]["Enums"]["app_role"]
+          created_at: string
+          due_at: string | null
+          id: string
+          invalidated_reason: string | null
+          object_id: string | null
+          object_type: string
+          object_version: number
+          organization_id: string
+          stage: Database["public"]["Enums"]["tender_stage"]
+          state: Database["public"]["Enums"]["decision_state"]
+          submitted_at: string
+          submitted_by: string
+          tender_id: string
+          updated_at: string
+          workflow_instance_id: string | null
+        }
+        Insert: {
+          approver_role: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          invalidated_reason?: string | null
+          object_id?: string | null
+          object_type?: string
+          object_version?: number
+          organization_id: string
+          stage: Database["public"]["Enums"]["tender_stage"]
+          state?: Database["public"]["Enums"]["decision_state"]
+          submitted_at?: string
+          submitted_by: string
+          tender_id: string
+          updated_at?: string
+          workflow_instance_id?: string | null
+        }
+        Update: {
+          approver_role?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          invalidated_reason?: string | null
+          object_id?: string | null
+          object_type?: string
+          object_version?: number
+          organization_id?: string
+          stage?: Database["public"]["Enums"]["tender_stage"]
+          state?: Database["public"]["Enums"]["decision_state"]
+          submitted_at?: string
+          submitted_by?: string
+          tender_id?: string
+          updated_at?: string
+          workflow_instance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tasks_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tasks_workflow_instance_id_fkey"
+            columns: ["workflow_instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -66,6 +203,125 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boq_items: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          criticality: Database["public"]["Enums"]["criticality"]
+          description: string
+          description_ar: string | null
+          display_order: number
+          document_version_id: string | null
+          exclusion_reason: string | null
+          id: string
+          item_code: string | null
+          notes: string | null
+          organization_id: string
+          override_reason: string | null
+          quantity: number | null
+          rate_only: boolean
+          reviewed_at: string | null
+          reviewed_by: string | null
+          section_path: string | null
+          sheet_index: number | null
+          sheet_name: string | null
+          source_reference_id: string | null
+          status: Database["public"]["Enums"]["item_review_status"]
+          tender_id: string
+          unit: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          criticality?: Database["public"]["Enums"]["criticality"]
+          description: string
+          description_ar?: string | null
+          display_order?: number
+          document_version_id?: string | null
+          exclusion_reason?: string | null
+          id?: string
+          item_code?: string | null
+          notes?: string | null
+          organization_id: string
+          override_reason?: string | null
+          quantity?: number | null
+          rate_only?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          section_path?: string | null
+          sheet_index?: number | null
+          sheet_name?: string | null
+          source_reference_id?: string | null
+          status?: Database["public"]["Enums"]["item_review_status"]
+          tender_id: string
+          unit?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          criticality?: Database["public"]["Enums"]["criticality"]
+          description?: string
+          description_ar?: string | null
+          display_order?: number
+          document_version_id?: string | null
+          exclusion_reason?: string | null
+          id?: string
+          item_code?: string | null
+          notes?: string | null
+          organization_id?: string
+          override_reason?: string | null
+          quantity?: number | null
+          rate_only?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          section_path?: string | null
+          sheet_index?: number | null
+          sheet_name?: string | null
+          source_reference_id?: string | null
+          status?: Database["public"]["Enums"]["item_review_status"]
+          tender_id?: string
+          unit?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boq_items_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boq_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boq_items_source_reference_id_fkey"
+            columns: ["source_reference_id"]
+            isOneToOne: false
+            referencedRelation: "source_references"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boq_items_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
             referencedColumns: ["id"]
           },
         ]
@@ -202,6 +458,254 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          byte_size: number
+          created_at: string
+          file_id: string
+          id: string
+          mime_type: string | null
+          organization_id: string
+          replace_reason: string | null
+          sha256: string
+          storage_path: string
+          supersedes_id: string | null
+          tender_id: string
+          uploaded_by: string | null
+          version_no: number
+        }
+        Insert: {
+          byte_size?: number
+          created_at?: string
+          file_id: string
+          id?: string
+          mime_type?: string | null
+          organization_id: string
+          replace_reason?: string | null
+          sha256: string
+          storage_path: string
+          supersedes_id?: string | null
+          tender_id: string
+          uploaded_by?: string | null
+          version_no?: number
+        }
+        Update: {
+          byte_size?: number
+          created_at?: string
+          file_id?: string
+          id?: string
+          mime_type?: string | null
+          organization_id?: string
+          replace_reason?: string | null
+          sha256?: string
+          storage_path?: string
+          supersedes_id?: string | null
+          tender_id?: string
+          uploaded_by?: string | null
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "tender_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extraction_exceptions: {
+        Row: {
+          boq_item_id: string | null
+          cell_ref: string | null
+          created_at: string
+          document_version_id: string | null
+          id: string
+          kind: string
+          message: string
+          organization_id: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          row_index: number | null
+          sheet_name: string | null
+          status: Database["public"]["Enums"]["exception_status"]
+          tender_id: string
+          updated_at: string
+        }
+        Insert: {
+          boq_item_id?: string | null
+          cell_ref?: string | null
+          created_at?: string
+          document_version_id?: string | null
+          id?: string
+          kind: string
+          message: string
+          organization_id: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          row_index?: number | null
+          sheet_name?: string | null
+          status?: Database["public"]["Enums"]["exception_status"]
+          tender_id: string
+          updated_at?: string
+        }
+        Update: {
+          boq_item_id?: string | null
+          cell_ref?: string | null
+          created_at?: string
+          document_version_id?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          organization_id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          row_index?: number | null
+          sheet_name?: string | null
+          status?: Database["public"]["Enums"]["exception_status"]
+          tender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraction_exceptions_boq_item_id_fkey"
+            columns: ["boq_item_id"]
+            isOneToOne: false
+            referencedRelation: "boq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraction_exceptions_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraction_exceptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraction_exceptions_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extraction_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_version_id: string
+          error_summary: string | null
+          exceptions_created: number
+          finished_at: string | null
+          id: string
+          idempotency_key: string
+          items_created: number
+          organization_id: string
+          requirements_created: number
+          rows_scanned: number
+          sheet_summary: Json
+          sheets_found: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["extraction_status"]
+          tender_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_version_id: string
+          error_summary?: string | null
+          exceptions_created?: number
+          finished_at?: string | null
+          id?: string
+          idempotency_key: string
+          items_created?: number
+          organization_id: string
+          requirements_created?: number
+          rows_scanned?: number
+          sheet_summary?: Json
+          sheets_found?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["extraction_status"]
+          tender_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_version_id?: string
+          error_summary?: string | null
+          exceptions_created?: number
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string
+          items_created?: number
+          organization_id?: string
+          requirements_created?: number
+          rows_scanned?: number
+          sheet_summary?: Json
+          sheets_found?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["extraction_status"]
+          tender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraction_jobs_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraction_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraction_jobs_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
             referencedColumns: ["id"]
           },
         ]
@@ -407,6 +911,222 @@ export type Database = {
         }
         Relationships: []
       }
+      requirements: {
+        Row: {
+          category: string
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          criticality: Database["public"]["Enums"]["criticality"]
+          document_version_id: string | null
+          id: string
+          organization_id: string
+          override_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_reference_id: string | null
+          status: Database["public"]["Enums"]["item_review_status"]
+          tender_id: string
+          text: string
+          text_ar: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          criticality?: Database["public"]["Enums"]["criticality"]
+          document_version_id?: string | null
+          id?: string
+          organization_id: string
+          override_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_reference_id?: string | null
+          status?: Database["public"]["Enums"]["item_review_status"]
+          tender_id: string
+          text: string
+          text_ar?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          criticality?: Database["public"]["Enums"]["criticality"]
+          document_version_id?: string | null
+          id?: string
+          organization_id?: string
+          override_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_reference_id?: string | null
+          status?: Database["public"]["Enums"]["item_review_status"]
+          tender_id?: string
+          text?: string
+          text_ar?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirements_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirements_source_reference_id_fkey"
+            columns: ["source_reference_id"]
+            isOneToOne: false
+            referencedRelation: "source_references"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirements_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_references: {
+        Row: {
+          cell_ref: string | null
+          confidence: number | null
+          created_at: string
+          document_version_id: string
+          id: string
+          normalized_text: string | null
+          organization_id: string
+          page_number: number | null
+          raw_text: string | null
+          row_index: number | null
+          sheet_index: number | null
+          sheet_name: string | null
+          tender_id: string
+        }
+        Insert: {
+          cell_ref?: string | null
+          confidence?: number | null
+          created_at?: string
+          document_version_id: string
+          id?: string
+          normalized_text?: string | null
+          organization_id: string
+          page_number?: number | null
+          raw_text?: string | null
+          row_index?: number | null
+          sheet_index?: number | null
+          sheet_name?: string | null
+          tender_id: string
+        }
+        Update: {
+          cell_ref?: string | null
+          confidence?: number | null
+          created_at?: string
+          document_version_id?: string
+          id?: string
+          normalized_text?: string | null
+          organization_id?: string
+          page_number?: number | null
+          raw_text?: string | null
+          row_index?: number | null
+          sheet_index?: number | null
+          sheet_name?: string | null
+          tender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_references_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_references_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_references_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tender_files: {
+        Row: {
+          created_at: string
+          current_version: number
+          id: string
+          kind: string
+          mime_type: string | null
+          organization_id: string
+          original_name: string
+          tender_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_version?: number
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          organization_id: string
+          original_name: string
+          tender_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_version?: number
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          organization_id?: string
+          original_name?: string
+          tender_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tender_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tender_files_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenders: {
         Row: {
           client_id: string | null
@@ -484,6 +1204,61 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_instances: {
+        Row: {
+          created_at: string
+          current_stage: Database["public"]["Enums"]["tender_stage"]
+          id: string
+          organization_id: string
+          state: Database["public"]["Enums"]["decision_state"]
+          template_id: string | null
+          tender_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_stage?: Database["public"]["Enums"]["tender_stage"]
+          id?: string
+          organization_id: string
+          state?: Database["public"]["Enums"]["decision_state"]
+          template_id?: string | null
+          tender_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_stage?: Database["public"]["Enums"]["tender_stage"]
+          id?: string
+          organization_id?: string
+          state?: Database["public"]["Enums"]["decision_state"]
+          template_id?: string | null
+          tender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instances_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instances_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instances_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: true
+            referencedRelation: "tenders"
             referencedColumns: ["id"]
           },
         ]
@@ -600,6 +1375,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_intake: { Args: { _org: string }; Returns: boolean }
+      can_review_technical: { Args: { _org: string }; Returns: boolean }
       has_any_org_role: {
         Args: {
           _org: string
@@ -624,6 +1401,7 @@ export type Database = {
         | "finance_manager"
         | "signatory"
         | "viewer"
+      criticality: "standard" | "critical"
       decision_state:
         | "draft"
         | "submitted"
@@ -633,6 +1411,15 @@ export type Database = {
         | "rejected"
         | "superseded"
         | "released"
+      exception_status: "open" | "resolved" | "overridden"
+      extraction_status:
+        | "queued"
+        | "running"
+        | "complete"
+        | "partial"
+        | "failed"
+        | "integration_required"
+      item_review_status: "needs_review" | "reviewed" | "exception" | "excluded"
       membership_status: "invited" | "active" | "suspended"
       tender_stage:
         | "intake"
@@ -781,6 +1568,7 @@ export const Constants = {
         "signatory",
         "viewer",
       ],
+      criticality: ["standard", "critical"],
       decision_state: [
         "draft",
         "submitted",
@@ -791,6 +1579,16 @@ export const Constants = {
         "superseded",
         "released",
       ],
+      exception_status: ["open", "resolved", "overridden"],
+      extraction_status: [
+        "queued",
+        "running",
+        "complete",
+        "partial",
+        "failed",
+        "integration_required",
+      ],
+      item_review_status: ["needs_review", "reviewed", "exception", "excluded"],
       membership_status: ["invited", "active", "suspended"],
       tender_stage: [
         "intake",
