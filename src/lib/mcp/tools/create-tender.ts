@@ -25,6 +25,7 @@ export default defineTool({
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
+    const userId = ctx.getUserId() ?? null;
     const supabase = supabaseForUser(ctx);
 
     const { data: allowed, error: roleError } = await supabase.rpc("has_any_org_role", {
