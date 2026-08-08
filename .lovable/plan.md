@@ -1,112 +1,95 @@
-# TenderReady — Architecture & Phased Delivery Plan
+# TenderReady — Architecture, Roadmap, and Phase 1 Plan
 
-## Two stack corrections up front
+Phase 1 is the only phase to be implemented now. Phases 2–6 stay documented roadmap.
 
-1. **Server logic uses TanStack Start server functions, not Supabase Edge Functions.** This project runs on TanStack Start (React 19 + Vite 7, SSR on Cloudflare Workers). App-internal server logic (ingestion, AI, pricing, approvals, exports) is written as `createServerFn` handlers with auth middleware; only true external callers (webhooks, cron) get `/api/public/*` routes. Same security properties, same secrets model — different file shape than "Edge Functions".
-2. **Backend is Lovable Cloud** (managed Postgres + Auth + private Storage + RLS + migrations). Migrations are files in the repo, so schema is tracked, not dashboard-only.
+## 1. Architecture Overview
 
-Everything else in your contract is taken as required product behavior.
+Stack: TanStack Start (React 19 + Vite), strict TypeScript, Tailwind v4 + shadcn/ui, TanStack Query, React Hook Form + Zod, i18next, Decimal.js. Backend: Lovable Cloud (Postgres + Auth + private Storage + RLS + migrations). Server logic uses TanStack `createServerFn` (no Supabase Edge Functions on this stack); webhooks/cron use `src/routes/api/public/*`.
 
-## Route map
+Guiding rules: every business table carries `organization_id`; org membership is verified server-side, never trusted from the browser; approvals and releases run only through authorized server functions inside transactions; money is `numeric(18,4)` in Postgres and Decimal.js in the client; `audit_events` is append-only.
 
-| Route | Screen | Notes |
-|---|---|---|
-| `/auth`, `/reset-password` | — | public; email+password and Google |
-| `/_authenticated/dashboard` | portfolio | tenders, alerts, gate load |
-| `/_authenticated/tenders/new` | 01 | create tender |
-| `/_authenticated/tenders/$id/intake` | 01 | uploads, validation, readiness, data boundary |
-| `/_authenticated/tenders/$id/requirements` | 02 | register, provenance, exceptions |
-| `/_authenticated/tenders/$id/portfolio-match` | 03 | hard gates, score, decision |
-| `/_authenticated/tenders/$id/sourcing` | 04 | 4 route branches, quotes |
-| `/_authenticated/tenders/$id/pricing` | 05 | factor engine, margin cockpit |
-| `/_authenticated/tenders/$id/commercial-review` | 06 | read-only checker view, Gate 05 |
-| `/_authenticated/approvals` | 07 | functional inbox (analytics flagged) |
-| `/_authenticated/admin/workflows` | 08 | read-only seeded config (editor flagged) |
-| `/_authenticated/settings/{company,users,catalogues,quotation-template}` | — | admin |
-| `/` | — | public landing → sign-in |
+### Route map (target)
+```text
+/login, /reset-password                     public
+/dashboard                                  portfolio + alerts
+/tenders/new, /tenders/:id/intake            Screen 01
+/tenders/:id/requirements                    Screen 02
+/tenders/:id/portfolio-match                 Screen 03
+/tenders/:id/sourcing                        Screen 04
+/tenders/:id/pricing                         Screen 05
+/tenders/:id/commercial-review               Screen 06
+/approvals                                   Screen 07 language, MVP queue
+/admin/workflows                             seeded read-only (editor behind flag)
+/settings/company | users | catalogues | quotation-template
+```
+All app routes live under the auth-gated `_authenticated` layout; `/` becomes a session-aware entry that redirects to `/dashboard` or `/login`.
 
-Shell components: `WorkspaceSidebar`, `TenderHeaderStrip` (client/location/area + EN\|AR + evidence chip + counter), `GuidedStepper`, `RoleBadge`, `StickyActionBar`, `SourceDrawer`, `AuditDrawer`, `EvidenceStrip`, `StatusPill`, `ConfidenceMeter`, `ExceptionQueue`, `BoundedTable` (sticky header + pinned key columns + internal scroll), `FactorRow`, `MarginCockpit`, `GateDecisionPanel`, `DemoRoleSwitcher` (dev-only).
+### Component map (shared)
+AppShell (sidebar, header with EN/AR + org switcher), GuidedStepper, KpiCard, DataTable (bounded scroll, sticky header/first column), SourceBadge + SourceDrawer, EvidenceStrip, ConfidenceMeter, ExceptionBadge, ApprovalPanel, DecisionDialog, AuditDrawer, MoneyCell, EmptyState/ErrorState/SkeletonBlock, RoleGuard.
 
-## Data model (ERD, grouped)
+### Data model (ERD groups)
+- Identity/tenancy: `profiles`, `organizations`, `organization_memberships(role,status)`, `company_settings`, `feature_flags`
+- Tender control: `clients`, `tenders`, `tender_members`, `tender_files`, `document_versions(sha256, order, supersedes)`, `extraction_jobs`, `source_references(sheet/page,row/cell,excerpt)`
+- Technical: `boq_items`, `requirements`, `clarifications`, `deliverables`, `comments`, `attachments`
+- Portfolio/sourcing: `catalogues`, `catalogue_products`, `product_specifications`, `stock_positions`, `portfolio_matches`, `suppliers`, `supplier_quotes`, `sourcing_routes`
+- Commercial: `pricing_versions`, `pricing_lines`, `cost_factors(value_type, basis, order)`, `fx_snapshots`, `commercial_policies`, `quotation_templates`, `quotations`, `quotation_versions`, `exports`
+- Governance: `workflow_templates`, `workflow_stages`, `workflow_instances`, `approval_tasks`, `approval_decisions`, `notifications`, `audit_events`, `ai_runs`
 
-Every tenant table: `id uuid pk`, `organization_id`, `created_at`, `updated_at`, `created_by`, and `version int` where materially edited. Money is `numeric(18,4)`.
+Constraints: unique active membership per (org,user); unique file hash per tender; unique active approval task per (object, stage); unique quotation number per org; `version` column for optimistic concurrency on materially edited records.
 
-- **Identity/tenancy** — `profiles`, `organizations`, `organization_memberships(role,status)`, `user_roles`, `company_settings`, `feature_flags`.
-- **Tender control** — `clients`, `tenders`, `tender_members`, `tender_files`, `document_versions(sha256, version_order, supersedes_id, addendum_of_id, processing_status)`, `extraction_jobs(status: queued|running|completed|failed|integration_required, idempotency_key)`, `source_references(document_version_id, sheet_name, sheet_order, page, row_number, cell_ref, range_ref, original_excerpt, locator jsonb)`.
-- **Technical** — `boq_items(parent_id, item_code, description_en/ar, unit, quantity, rate, amount, remarks, division, system, is_subtotal, is_rate_only, blank_price, exception_flags[], confidence, source_reference_id)`, `requirements(category, criticality, compliance_state, owner_id, confidence, source_reference_id, override_reason, override_by)`, `clarifications`, `deliverables`, `comments`, `attachments`, `raw_extractions` (raw JSON kept separate from normalized rows).
-- **Portfolio/sourcing** — `catalogues`, `catalogue_products`, `product_specifications`, `stock_positions`, `portfolio_matches(score, hard_gate_results jsonb, evidence jsonb, ai_explanation, maker_id, checker_id, decision)`, `suppliers`, `supplier_quotes(currency, incoterm, lead_time_days, valid_until, attachment_id)`, `sourcing_routes(route_type: company_exstock|company_import|outside_local|outside_foreign, approval_state)`.
-- **Commercial** — `pricing_versions`, `pricing_lines`, `cost_factors(value_type: fixed|percentage, value, currency, percentage_basis, sort_order, source_reference_id)`, `fx_snapshots(pair, rate, source, captured_at, approved_by)`, `commercial_policies`, `quotation_templates`, `quotations`, `quotation_versions`, `exports(manifest jsonb, checksum)`.
-- **Governance** — `workflow_templates`, `workflow_stages`, `workflow_instances`, `approval_tasks`, `approval_decisions`, `notifications`, append-only `audit_events`, `ai_runs(purpose, provider, model, prompt_version, input_ids, result_status, citations, tokens, cost, latency_ms, reviewer_outcome)`.
+### Role / RLS matrix (summary)
+Roles: `org_admin`, `proposal_engineer`, `technical_lead`, `product_manager`, `sourcing_manager`, `commercial_manager`, `finance_manager`, `signatory`, `viewer`.
 
-Unique constraints: `(organization_id,user_id)` membership; `(tender_id,sha256)` file hash; partial unique active `approval_tasks(object_type,object_id,stage)`; `(organization_id,quotation_number)`. Indexes on every FK plus `(organization_id, status)` hot paths.
+Read: any active member of the org. Write: role + tender assignment + object state + current workflow stage. Approve/release: server functions only, with maker-checker enforced against creator and material-edit audit events. RLS uses security-definer helpers `is_org_member(org)` and `has_org_role(org, role)` to avoid recursion; every table gets explicit GRANTs plus policies; storage bucket `tender-files` is private with org-prefixed paths and signed URLs only.
 
-Migration sequence: 01 enums+`profiles`/orgs/memberships/roles/`has_role`/`is_org_member` + audit → 02 clients/tenders/members/files/document_versions/extraction_jobs/source_references + storage bucket & policies → 03 boq_items/requirements/clarifications/deliverables/comments → 04 catalogues/products/specs/stock/matches/suppliers/quotes/routes → 05 pricing/cost_factors/fx/policies/templates/quotations/exports → 06 workflow/approval/notifications/ai_runs/feature_flags → 07 seed (org, users, sanitized Elevate Gym tender, catalogue, matches, routes, quotes, FX, factors, tasks, template).
+### State machine
+Intake → Technical → Product → Sourcing → Commercial → Finance → Release. States: draft, submitted, in_review, changes_requested, approved, rejected, superseded, released. Material edit → new version + invalidate only downstream approvals with recorded reason. Conditions (low margin, foreign sourcing, expired quote, stale FX, missing critical evidence) add approvers or block release.
 
-## Authorization
+### Server function inventory (target, phase-tagged)
+Auth/org (P1): `getMyContext`, `listMyOrganizations`, `switchOrganization`, `inviteMember`, `updateMemberRole`, `getCompanySettings`, `updateCompanySettings`, `listFeatureFlags`, `recordAuditEvent`.
+Later: `createTender`, `requestUploadUrl`, `startExtraction` (idempotency key), `getExtractionStatus`, `upsertBoqItems`, `runPortfolioMatch`, `decideMatch`, `setSourcingRoute`, `savePricingVersion`, `submitForApproval`, `decideApproval`, `releaseQuotation`, `generateExport`, `aiRun`.
+Every mutation: Zod input, membership+role check, idempotency key where retryable, structured log with correlation id (no document content, no secrets).
 
-Security-definer helpers: `is_org_member(org)`, `has_org_role(org, role)`, `is_tender_member(tender)`, `can_edit_object(object, stage)`. All policies call these — never a subquery on the policy's own table.
+### Extraction / AI provider plan
+XLSX/CSV parsed server-side with a pure-JS parser (Worker-safe). PDF/DOCX/scanned goes through a provider adapter; without a configured secret the UI shows `Integration required` and never fabricates content. AI runs only in server functions with structured JSON output, mandatory citations to `source_references`, and full logging in `ai_runs`. Secrets required later: document-intelligence/OCR key, LOVABLE_API_KEY for AI Gateway.
 
-| Role | Read org | Intake edit | Requirements | Match | Sourcing | Pricing edit | Approve |
-|---|---|---|---|---|---|---|---|
-| Org Admin | ✓ | — | — | — | — | — | settings only, no override |
-| Proposal Engineer (Maker) | ✓ | ✓ | ✓ draft | propose | propose | ✓ | never own object |
-| Technical Lead | ✓ | — | ✓ review | — | — | — | Gate 02 |
-| Product Manager | ✓ | — | — | ✓ | — | — | Gate 03 |
-| Sourcing Manager | ✓ | — | — | — | ✓ | — | Gate 04 |
-| Commercial Manager | ✓ | — | — | — | — | — | Gate 05 |
-| Finance Manager | ✓ | — | — | — | — | FX/tax | Gate 06 |
-| GM / Signatory | ✓ | — | — | — | — | — | Gate 07 release |
-| Viewer / Auditor | ✓ | — | — | — | — | — | none |
+## 2. Phase 1 — Foundation (implement now)
 
-RLS on every table (`organization_id` scoped, role-gated writes) plus `storage.objects` policies keyed on org path prefix; uploads restricted by MIME allowlist, size cap, sanitized filename, SHA-256 verification, access only via signed URLs. `organization_id` from the browser is never trusted — resolved from the caller's active membership server-side. Rate limits (per user+endpoint token bucket in Postgres) on ingestion, AI, export, and approval endpoints.
+Goal: a real multi-tenant, bilingual, permission-aware shell with authentication, tenancy schema, RLS, private storage, seed data, and audit foundation. No tender ingestion, matching, pricing, or approvals logic yet — those screens land as gated placeholders that state the phase they arrive in.
 
-## Approval state machine (server-side)
+Steps:
+1. Enable Lovable Cloud.
+2. Design system: brand tokens (navy #061A3D, dark navy #0B2855, ink #12203A, teal #009B93, blue #1253C6, gold #D99A00, bg #F4F7FA, border #E2E8F0, muted #687386, green #119C67, red #D3465B, purple #6D5BD0), Inter + Cairo via root `<link>`, 12–16px radii, restrained shadows, dense-table typography — all as semantic tokens in `src/styles.css`.
+3. Migration 1 — tenancy: `profiles`, `organizations`, `organization_memberships`, `company_settings`, `feature_flags`, `app_role` enum, `is_org_member`/`has_org_role` security-definer functions, GRANTs, RLS policies, signup trigger creating `profiles`.
+4. Migration 2 — governance foundation: append-only `audit_events` (insert-only policy, no update/delete), `notifications`, seeded `workflow_templates` + `workflow_stages` for the 7-stage flow, `feature_flags` row `roadmap_features=false`.
+5. Migration 3 — private storage bucket `tender-files` with org-prefixed path policies (created via the storage tool + `storage.objects` policies), and empty tender-control tables needed for referential integrity only (`clients`, `tenders`) so the dashboard can list real rows.
+6. Migration 4 — seed: one organization (Elevate-Gym pilot org), `company_settings`, one seeded client and one sanitized tender header row, workflow rows, feature flag. Users are created by real signup; roles assigned by admin — no public hard-coded passwords.
+7. Auth: `/login` (email+password and Google via the Lovable broker) and `/reset-password`; `_authenticated` gate; root `onAuthStateChange` → `router.invalidate()`; session-aware header affordance and clean sign-out.
+8. AppShell + navigation + guided stepper matching the approved screens, with `RoleGuard`-aware controls.
+9. i18n: i18next with EN/AR resource bundles for nav, statuses, forms, validation, notifications; `dir` toggling at the app root without reload or form-state loss; numbers, currency, part numbers, and cell references stay LTR.
+10. Screens delivered in Phase 1 with real data: `/dashboard` (tender portfolio + alerts from DB), `/settings/company`, `/settings/users` (membership + role management), plus permission-aware placeholders for screens 01–06, `/approvals`, `/admin/workflows`, `/settings/catalogues`, `/settings/quotation-template`.
+11. Dev-only `Demo Role Switcher`, active only when `VITE_DEMO_MODE=true`, that changes the viewed role for UI purposes and never bypasses server authorization.
+12. Visual self-QA: 1920×1080, 1440×900, 1024×768 in EN and AR; assert no document-level horizontal scroll, no clipped or overlapping elements, correct RTL mirroring; repair before reporting.
 
-States: `draft → submitted → in_review → {approved | changes_requested | rejected}`, plus `superseded`, `released`. Gates: Intake → Technical → Product → Sourcing → Commercial → Finance → Release, sequential by default.
+### Phase 1 tests
+- SQL/RLS: user in Org A cannot select or mutate Org B rows or storage objects; `audit_events` rejects UPDATE/DELETE; membership uniqueness holds.
+- Server functions: `updateMemberRole` rejects a non-admin caller; `organization_id` supplied by the client is ignored in favour of verified membership.
+- Frontend: EN/AR switch preserves form state and flips `dir`; unauthenticated access to `/dashboard` redirects to `/login`.
+- Layout: automated `scrollWidth` overflow check on every Phase 1 route in both languages.
+- Gates: typecheck, lint, unit tests, production build.
 
-`decide_approval(task_id, decision, note, object_version)` runs in one transaction and: locks the task; rejects if `object_version` is stale (optimistic concurrency); rejects if the actor created or materially edited the object per `audit_events` (maker-checker, enforced in SQL, not React); requires a note for `request_changes`/`reject`/override; writes `approval_decisions` + `audit_events`; advances the workflow instance; evaluates escalation conditions (margin < policy, foreign sourcing, missing critical evidence, expired quote, changed FX) and inserts extra required approvers or blocks release. Idempotency key per (task, actor, decision).
+### Phase 1 exit report
+Migrations applied, tables + functions + policies added, routes completed, tests run with results, remaining risks, next phase.
 
-`invalidate_downstream(object, reason)` fires on material edits (cost, quantity, FX, route, target margin) — creates a new object/pricing version and invalidates only Commercial/Finance/Release tasks, recording the reason. Upstream approved evidence stays valid.
+## 3. Roadmap (documented only, not implemented)
+- Phase 2 — Intake and evidence: uploads, hash/dedupe, async XLSX ingestion of the Elevate Gym workbook with full provenance, multi-sheet navigator, normalized BOQ/requirements, source drawer, exceptions, technical review.
+- Phase 3 — Portfolio and sourcing: catalogue import, deterministic hard gates then weighted score, evidence comparison, ex-stock/import/local/foreign branching, supplier quotes, sourcing approval.
+- Phase 4 — Commercial and governance: Decimal pricing engine with fixed/percentage factors and explicit bases, pricing versions, maker-checker state machine, approval inbox, quotation preview/release.
+- Phase 5 — AI and exports: structured cited AI functions, proposal sections, PDF/DOCX/XLSX exports with manifests and checksums.
+- Phase 6 — Hardening: automated + browser tests, RLS/security audit, performance, observability, accessibility, Arabic RTL QA, failure recovery, deployment checklist.
 
-## Server functions (inputs → outputs, auth, idempotency)
+## 4. Risks
+Provenance fidelity of the real workbook (merged headers, subtotals, `Rate only`); Worker-runtime limits for PDF/OCR (mitigated by external provider adapter); percentage-basis circularity in pricing (mitigated by ordered factors + basis validation); RTL density in wide tables; approval-invalidation blast radius (mitigated by stage-scoped invalidation with recorded reasons).
 
-All authenticated via `requireSupabaseAuth`; all validate with Zod; all return typed DTOs; all mutating functions take an idempotency key and log a correlation ID.
-
-`createTender`, `requestUploadUrl`, `registerDocumentVersion` (hash dedupe → warns), `startExtraction` (queues job, idempotent per file hash+version), `getExtractionStatus`, `normalizeExtraction`, `listRequirements`, `updateRequirement` (versioned), `overrideRequirementSource` (reason required), `resolveException`, `getSourceLocator`, `importCatalogue`, `runPortfolioMatch` (deterministic hard gates then weighted score), `decidePortfolioMatch`, `setSourcingRoute`, `recordSupplierQuote`, `createPricingVersion`, `upsertCostFactor`, `computePricing` (pure Decimal engine, no persistence), `captureFxSnapshot` (Finance-approved), `submitForApproval`, `decideApproval`, `previewQuotation`, `releaseQuotation` (GM only, all gates green), `generateExport` (+ manifest & checksum), `runAiTask` (purpose-scoped), `listAuditEvents`. Public routes: `/api/public/webhooks/*` (signature-verified), `/api/public/cron/quote-expiry`.
-
-## Pricing engine
-
-Ordered deterministic factor pipeline over Decimal.js; each factor is `fixed` or `percentage` with an explicit basis (base cost, running landed subtotal, or selling price), basis graph checked acyclic before evaluation. `base_cost_egp = foreign_unit_cost × approved_fx_rate`. `selling_price_before_tax = landed_cost / (1 − target_margin_rate)`; margin and markup are separately stored, labelled, and tested. Central currency rounding module. Blank source prices stay blank — no AI, no defaulting. Every step is shown in a transparent breakdown with the dated FX snapshot and quote validity.
-
-## AI and evidence
-
-Server-only, structured JSON validated by Zod before persistence, via Lovable AI (default `google/gemini-3.6-flash`). Tasks: requirement classification, EN/AR normalization, exception detection, match explanation, clarification drafting, source-linked proposal sections. Every claim cites stored `source_references`; uncited output is blocked or `needs_review`. AI may explain but never override a failed hard gate, never fill blank prices, never invent suppliers or compliance claims. Three visibly separate context layers: approved tender facts, approved company knowledge, approved strategy. Internal cost/margin/supplier notes are never sent into client-facing generation. Every call recorded in `ai_runs`.
-
-**Secrets:** Lovable AI needs none (provisioned). OCR/document intelligence for PDF/DOCX/scanned files needs a provider secret you supply — until then those uploads surface `Integration required` and nothing is fabricated. I will request it when Phase 2 reaches PDF ingestion, and will not claim any integration works without a configured secret and a passing test.
-
-## Design system
-
-Tokens in `src/styles.css` (oklch): navy `#061A3D`, dark navy `#0B2855`, ink `#12203A`, teal `#009B93`, blue `#1253C6`, gold `#D99A00`, bg `#F4F7FA`, border `#E2E8F0`, muted `#687386`, green `#119C67`, red `#D3465B`, purple `#6D5BD0`; radii 12–16px, restrained shadows. Inter (EN) + Cairo (AR) via root `<link>`. i18next with `dir` flip at app root, state preserved across switch; numbers, formulas, part numbers, currency, emails, and cell refs never mirrored. Uploaded 08B logo as a Lovable asset; square favicon in `public/`.
-
-## Phases (one at a time — migrate, seed, test, pin)
-
-1. **Foundation** — Cloud, design shell, routing, tokens, i18n, Auth, orgs/memberships/roles, RLS, private storage, migrations 01, seed users, audit foundation, demo role switcher behind `VITE_DEMO_MODE`.
-2. **Intake & evidence** — tender creation, uploads with hash dedupe, async XLSX ingestion of the real Elevate Gym workbook (sheets, divisions, rows, cell refs, merged headers, formula vs displayed, subtotals, remarks, blank prices, rate-only), multi-sheet navigator, normalized BOQ/requirements, source drawer, exceptions, technical review.
-3. **Portfolio & sourcing** — catalogue import, hard gates + weighted score, evidence comparison, 4-way route branching, supplier quotes, sourcing approval.
-4. **Commercial & governance** — Decimal pricing engine, factor versioning, approval state machine, approval inbox, quotation preview/release.
-5. **AI & exports** — structured AI functions with citations, proposal sections, PDF/DOCX/XLSX exports with manifests.
-6. **Hardening** — tests, RLS/security audit, performance, observability, a11y, Arabic RTL QA, failure recovery, deployment checklist.
-
-Each phase ends with typecheck, lint, unit tests, migration check, production build, then a report of migrations applied, tables/functions/policies added, routes completed, test results, remaining risks, and the next phase.
-
-## Tests
-
-SQL/RLS tests for cross-org isolation and self-approval blocking; server-function tests for the 14 acceptance criteria (notably: direct-API maker self-approval rejected, unsourced critical requirement blocked without a stored override reason, blank prices stay blank, fixed vs percentage and margin vs markup arithmetic, versioning invalidates only downstream gates, escalation triggers, quotation contains no internal data); Playwright flows for the full pilot path and EN/AR state preservation; automated overflow assertions at 1920×1080, 1440×900, 1024×768 in both directions (`scrollWidth` bounded except inside declared scroll regions), plus screenshot review and repair per route.
-
-## Deferred (explicit)
-
-Screen 07 SLA analytics and delegation intelligence, Screen 08 drag-and-drop versioned workflow editing (seeded read-only config in MVP), Realtime presence, email/SMS notification delivery, OCR for scanned PDFs until a provider secret exists, mobile authoring (mobile is read-only/approval-friendly), and Arabic machine translation of tender content (canonical data stored once).
-
-## Risks
-
-Real-workbook shape variance is the main ingestion risk (mitigated by keeping raw extraction separate and routing anything uncertain to the exception queue); circular percentage bases (mitigated by acyclic basis validation); Worker runtime limits on large XLSX parsing (mitigated by chunked async jobs with retry); RTL table density (mitigated by the bounded-table primitive and per-phase visual QA).
+## 5. Deferred / blocked scope
+Screen-07 SLA analytics and delegation intelligence, Screen-08 drag-and-drop versioned workflow editing (behind `roadmap_features`); autonomous submission or compliance guarantees (never); OCR/PDF extraction and client-facing AI until their secrets are configured; final quotation template fidelity until the company template file is provided.
