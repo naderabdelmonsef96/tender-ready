@@ -22,7 +22,11 @@ export default defineMcp({
   }),
   // Cast: the SDK's tool list type is invariant under exactOptionalPropertyTypes,
   // which rejects tools that simply omit the optional outputSchema.
-  tools: [listOrganizationsTool, listTendersTool, getTenderTool, listClientsTool, createTenderTool] as Parameters<
-    typeof defineMcp
-  >[0]["tools"],
+  tools: [
+    listOrganizationsTool,
+    listTendersTool,
+    getTenderTool,
+    listClientsTool,
+    createTenderTool,
+  ] as unknown as Parameters<typeof defineMcp>[0]["tools"],
 });
