@@ -84,6 +84,9 @@ function Page() {
   const canEdit = role === "org_admin" || role === "proposal_engineer";
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
   const [replaceFileId, setReplaceFileId] = useState<string | null>(null);
   const [replaceReason, setReplaceReason] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
