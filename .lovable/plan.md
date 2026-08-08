@@ -13,11 +13,12 @@ Backend foundation was applied in the previous session and is live:
 - Seed data: Elevate Engineering organization, company settings, Silver Sands client, tender `TND-2026-001`, the seven workflow stages, `roadmap_features` flag off.
 - Design tokens (navy/teal/gold/blue in oklch), Inter + Cairo fonts, full EN/AR text bundles, i18n setup, logo and favicon, `decimal.js` installed.
 - Organization settings and membership server functions with admin-only checks plus audit writes.
+- Agent integrations (MCP) with its OAuth consent screen, plus a basic `/auth` sign-in and sign-up page created to support that consent flow.
 
 ## What Phase 1 still builds
 
 ### 1. Authentication surfaces
-- `/auth` — sign in, sign up (full name, email, password), and forgot-password, in one bilingual card using the approved navy/teal identity.
+- `/auth` — rebuild the basic page created for the consent flow into the approved bilingual navy/teal card, adding forgot-password alongside sign in and sign up.
 - `/reset-password` — public route that accepts the recovery link and sets a new password.
 - Email + password only in Phase 1 (Google sign-in is a later decision, since the pilot is an internal engineering team).
 - Session listener registered once at the app root so signing in or out immediately updates the UI.
