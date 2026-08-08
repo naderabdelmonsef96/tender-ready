@@ -246,7 +246,7 @@ function Page() {
 
   return (
     <div className="mx-auto w-full max-w-[1400px]">
-      <PageHeader title={t("screens.supplyRoute")} subtitle={t("sourcing.subtitle")} />
+      <PageHeader title={t("screens.sourcing")} subtitle={t("sourcing.subtitle")} />
       <WorkbenchStepper currentPath="/workbench/sourcing" />
 
       <Panel title={t("intake.selectTender")} className="mb-4">
@@ -331,10 +331,10 @@ function Page() {
             />
           </div>
 
-          <Panel title={t("screens.supplyRoute")} description={t("sourcing.subtitle")}>
+          <Panel title={t("screens.sourcing")} description={t("sourcing.subtitle")}>
             <TableScroll>
               <table className="w-full border-collapse text-sm">
-                <caption className="sr-only">{t("screens.supplyRoute")}</caption>
+                <caption className="sr-only">{t("screens.sourcing")}</caption>
                 <thead>
                   <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                     <th scope="col" className="px-2 py-2 text-start">
@@ -447,7 +447,7 @@ function Page() {
             </TableScroll>
           </Panel>
 
-          <Panel title={t("approvals.title")} description={t("approvals.makerChecker")}>
+          <Panel title={t("approvals.title")} description={t("approvals.selfBlockedHelp")}>
             <div className="flex flex-col gap-3">
               {activeTask && (
                 <div className="flex flex-wrap items-center gap-2 text-sm">
