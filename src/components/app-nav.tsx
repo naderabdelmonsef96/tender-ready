@@ -43,7 +43,12 @@ export const navGroups: NavGroup[] = [
         icon: FileSpreadsheet,
         stage: "technical",
       },
-      { to: "/workbench/portfolio", labelKey: "screens.portfolioMatch", icon: Package, stage: "product" },
+      {
+        to: "/workbench/portfolio",
+        labelKey: "screens.portfolioMatch",
+        icon: Package,
+        stage: "product",
+      },
       { to: "/workbench/sourcing", labelKey: "screens.sourcing", icon: Truck, stage: "sourcing" },
       { to: "/workbench/pricing", labelKey: "screens.pricing", icon: Coins, stage: "commercial" },
       {
@@ -106,7 +111,9 @@ export function NavLink({
       <span
         className={cn(
           "flex h-5 w-5 shrink-0 items-center justify-center",
-          active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover:text-sidebar-primary",
+          active
+            ? "text-sidebar-primary"
+            : "text-sidebar-foreground/60 group-hover:text-sidebar-primary",
         )}
       >
         <Icon className="h-4 w-4" aria-hidden="true" />

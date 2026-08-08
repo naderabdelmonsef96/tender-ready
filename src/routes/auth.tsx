@@ -114,7 +114,11 @@ function AuthPage() {
   }
 
   const primaryLabel =
-    mode === "signin" ? t("common.signIn") : mode === "signup" ? t("common.signUp") : t("auth.sendReset");
+    mode === "signin"
+      ? t("common.signIn")
+      : mode === "signup"
+        ? t("common.signUp")
+        : t("auth.sendReset");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">

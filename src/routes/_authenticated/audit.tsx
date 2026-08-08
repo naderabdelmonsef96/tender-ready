@@ -15,10 +15,14 @@ export const Route = createFileRoute("/_authenticated/audit")({
       { title: "Audit trail — TenderReady" },
       {
         name: "description",
-        content: "Append-only record of every security and approval relevant action in your organization.",
+        content:
+          "Append-only record of every security and approval relevant action in your organization.",
       },
       { property: "og:title", content: "Audit trail — TenderReady" },
-      { property: "og:description", content: "Immutable governance history for tenders and approvals." },
+      {
+        property: "og:description",
+        content: "Immutable governance history for tenders and approvals.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -87,7 +91,10 @@ function AuditPage() {
                   </thead>
                   <tbody>
                     {query.data.events.map((event) => (
-                      <tr key={event.id} className="border-b border-border/70 align-top last:border-0">
+                      <tr
+                        key={event.id}
+                        className="border-b border-border/70 align-top last:border-0"
+                      >
                         <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                           {formatDateTime(event.created_at, language)}
                         </td>
@@ -112,7 +119,9 @@ function AuditPage() {
                           {event.object_type}
                         </td>
                         <td className="max-w-[24rem] px-4 py-3">
-                          <span className="block break-words">{event.summary ?? t("common.none")}</span>
+                          <span className="block break-words">
+                            {event.summary ?? t("common.none")}
+                          </span>
                         </td>
                       </tr>
                     ))}

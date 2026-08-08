@@ -31,7 +31,15 @@ describe("locale bundles", () => {
   });
 
   it("keep every enum-backed label translated", () => {
-    const stages = ["intake", "technical", "product", "sourcing", "commercial", "finance", "release"];
+    const stages = [
+      "intake",
+      "technical",
+      "product",
+      "sourcing",
+      "commercial",
+      "finance",
+      "release",
+    ];
     const states = [
       "draft",
       "submitted",

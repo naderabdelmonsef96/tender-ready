@@ -15,7 +15,9 @@ export default defineTool({
 
     const { data, error } = await supabase
       .from("organization_memberships")
-      .select("role, status, organization_id, organizations(id, name, name_ar, slug, base_currency)")
+      .select(
+        "role, status, organization_id, organizations(id, name, name_ar, slug, base_currency)",
+      )
       .eq("status", "active");
 
     if (error) return failed(error.message);

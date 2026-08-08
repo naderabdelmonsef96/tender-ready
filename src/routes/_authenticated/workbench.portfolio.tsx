@@ -6,9 +6,15 @@ export const Route = createFileRoute("/_authenticated/workbench/portfolio")({
   head: () => ({
     meta: [
       { title: "Portfolio match — TenderReady" },
-      { name: "description", content: "Match every requirement to your product portfolio with named review." },
+      {
+        name: "description",
+        content: "Match every requirement to your product portfolio with named review.",
+      },
       { property: "og:title", content: "Portfolio match — TenderReady" },
-      { property: "og:description", content: "Match every requirement to your product portfolio with named review." },
+      {
+        property: "og:description",
+        content: "Match every requirement to your product portfolio with named review.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

@@ -14,10 +14,14 @@ export const Route = createFileRoute("/_authenticated/admin/workflows")({
       { title: "Workflow configuration — TenderReady" },
       {
         name: "description",
-        content: "The seeded seven-stage maker-checker approval flow with approver roles and SLA targets.",
+        content:
+          "The seeded seven-stage maker-checker approval flow with approver roles and SLA targets.",
       },
       { property: "og:title", content: "Workflow configuration — TenderReady" },
-      { property: "og:description", content: "Stage order, approver roles and release blocking rules." },
+      {
+        property: "og:description",
+        content: "Stage order, approver roles and release blocking rules.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -68,7 +72,7 @@ function WorkflowsPage() {
           {query.data.templates.map((template) => (
             <Panel
               key={template.id}
-              title={language === "ar" ? template.name_ar ?? template.name : template.name}
+              title={language === "ar" ? (template.name_ar ?? template.name) : template.name}
               description={template.description ?? undefined}
               bodyClassName="p-0"
             >
@@ -99,17 +103,21 @@ function WorkflowsPage() {
                       .filter((stage) => stage.stage !== null)
                       .map((stage) => (
                         <tr key={stage.id} className="border-b border-border/70 last:border-0">
-                          <td className="px-4 py-3 tabular-nums text-muted-foreground">{stage.stage_order}</td>
+                          <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                            {stage.stage_order}
+                          </td>
                           <td className="max-w-[18rem] px-4 py-3">
                             <span className="block truncate font-medium">
-                              {language === "ar" ? stage.name_ar ?? stage.name : stage.name}
+                              {language === "ar" ? (stage.name_ar ?? stage.name) : stage.name}
                             </span>
                             <span className="block truncate text-xs text-muted-foreground">
                               {t(`stage.${stage.stage}`)}
                             </span>
                           </td>
                           <td className="max-w-[16rem] px-4 py-3">
-                            <span className="block truncate">{t(`roles.${stage.approver_role}`)}</span>
+                            <span className="block truncate">
+                              {t(`roles.${stage.approver_role}`)}
+                            </span>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 tabular-nums">
                             {stage.sla_hours ?? t("common.none")}

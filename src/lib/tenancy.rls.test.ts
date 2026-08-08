@@ -46,9 +46,11 @@ describe.runIf(url && key)("anonymous access is denied on every business table",
   }
 
   it("audit_events cannot be written anonymously", async () => {
-    const { error } = await client
-      .from("audit_events")
-      .insert({ organization_id: "11111111-1111-4111-8111-111111111111", action: "probe", object_type: "test" });
+    const { error } = await client.from("audit_events").insert({
+      organization_id: "11111111-1111-4111-8111-111111111111",
+      action: "probe",
+      object_type: "test",
+    });
     expect(error).not.toBeNull();
   });
 });

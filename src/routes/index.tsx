@@ -49,7 +49,11 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-sidebar">
         <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center gap-3 px-4">
-          <img src={logo} alt="TenderReady" className="h-9 w-9 rounded-md bg-white/95 object-contain p-1" />
+          <img
+            src={logo}
+            alt="TenderReady"
+            className="h-9 w-9 rounded-md bg-white/95 object-contain p-1"
+          />
           <span className="text-sm font-semibold text-sidebar-accent-foreground">TenderReady</span>
           <div className="ms-auto">
             <Button asChild size="sm">
@@ -70,9 +74,9 @@ function Landing() {
             From tender file to signed quotation, with every decision owned by a named person
           </h1>
           <p className="mt-4 text-base text-muted-foreground">
-            TenderReady is a bilingual Arabic-English operating system for Egyptian and MENA engineering,
-            contracting, EPC, solar and medical-equipment teams. AI assists with extraction and matching;
-            humans own every material decision.
+            TenderReady is a bilingual Arabic-English operating system for Egyptian and MENA
+            engineering, contracting, EPC, solar and medical-equipment teams. AI assists with
+            extraction and matching; humans own every material decision.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
@@ -85,7 +89,10 @@ function Landing() {
 
         <section className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {highlights.map((item) => (
-            <article key={item.title} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <article
+              key={item.title}
+              className="rounded-xl border border-border bg-card p-5 shadow-sm"
+            >
               <item.icon className="h-5 w-5 text-primary" aria-hidden="true" />
               <h2 className="mt-3 text-sm font-semibold text-foreground">{item.title}</h2>
               <p className="mt-1.5 text-sm text-muted-foreground">{item.body}</p>
@@ -96,7 +103,8 @@ function Landing() {
 
       <footer className="border-t border-border py-6">
         <p className="mx-auto w-full max-w-[1200px] px-4 text-xs text-muted-foreground">
-          TenderReady — governed tender-to-quotation workflow. Access requires an organization invitation.
+          TenderReady — governed tender-to-quotation workflow. Access requires an organization
+          invitation.
         </p>
       </footer>
     </div>

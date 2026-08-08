@@ -6,9 +6,15 @@ export const Route = createFileRoute("/_authenticated/workbench/requirements")({
   head: () => ({
     meta: [
       { title: "BOQ & requirements — TenderReady" },
-      { name: "description", content: "Source-linked requirements register extracted from the tender files." },
+      {
+        name: "description",
+        content: "Source-linked requirements register extracted from the tender files.",
+      },
       { property: "og:title", content: "BOQ & requirements — TenderReady" },
-      { property: "og:description", content: "Source-linked requirements register extracted from the tender files." },
+      {
+        property: "og:description",
+        content: "Source-linked requirements register extracted from the tender files.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

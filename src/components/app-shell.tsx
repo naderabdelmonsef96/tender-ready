@@ -1,6 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Building2, ChevronDown, Languages, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  Languages,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { navGroups, NavLink, useCurrentPath } from "@/components/app-nav";
@@ -21,18 +30,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { initialsOf } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-function SidebarBody({
-  collapsed,
-  onNavigate,
-}: {
-  collapsed: boolean;
-  onNavigate?: () => void;
-}) {
+function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const { t } = useAppTranslation();
   const pathname = useCurrentPath();
 
   return (
-    <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4" aria-label={t("shell.openMenu")}>
+    <nav
+      className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4"
+      aria-label={t("shell.openMenu")}
+    >
       {navGroups.map((group) => (
         <div key={group.labelKey} className="flex flex-col gap-1">
           {!collapsed && (
@@ -63,13 +69,19 @@ function BrandMark({ collapsed }: { collapsed: boolean }) {
       to="/dashboard"
       className="flex items-center gap-2 rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
     >
-      <img src={logo} alt="" className="h-8 w-8 shrink-0 rounded-md bg-white/95 object-contain p-1" />
+      <img
+        src={logo}
+        alt=""
+        className="h-8 w-8 shrink-0 rounded-md bg-white/95 object-contain p-1"
+      />
       {!collapsed && (
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">
             {t("brand.name")}
           </span>
-          <span className="truncate text-[11px] text-sidebar-foreground/55">{t("brand.tagline")}</span>
+          <span className="truncate text-[11px] text-sidebar-foreground/55">
+            {t("brand.tagline")}
+          </span>
         </span>
       )}
     </Link>
@@ -96,12 +108,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const orgName =
     language === "ar"
-      ? workspace.activeMembership?.organization?.name_ar ??
+      ? (workspace.activeMembership?.organization?.name_ar ??
         workspace.activeMembership?.organization?.name ??
-        "—"
-      : workspace.activeMembership?.organization?.name ?? "—";
+        "—")
+      : (workspace.activeMembership?.organization?.name ?? "—");
   const displayName =
-    (language === "ar" ? workspace.fullNameAr ?? workspace.fullName : workspace.fullName) ??
+    (language === "ar" ? (workspace.fullNameAr ?? workspace.fullName) : workspace.fullName) ??
     workspace.email ??
     "";
 
@@ -149,7 +161,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface/95 px-3 backdrop-blur sm:px-4">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("shell.openMenu")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                aria-label={t("shell.openMenu")}
+              >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </Button>
             </SheetTrigger>
@@ -168,10 +185,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Organization switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 min-w-0 max-w-[15rem] justify-start gap-2 px-2 sm:px-3">
+              <Button
+                variant="outline"
+                className="h-9 min-w-0 max-w-[15rem] justify-start gap-2 px-2 sm:px-3"
+              >
                 <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span className="truncate text-sm font-medium">{orgName}</span>
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <ChevronDown
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-64">
@@ -185,10 +208,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   <span className="truncate text-sm font-medium">
                     {language === "ar"
-                      ? membership.organization?.name_ar ?? membership.organization?.name
+                      ? (membership.organization?.name_ar ?? membership.organization?.name)
                       : membership.organization?.name}
                   </span>
-                  <span className="text-xs text-muted-foreground">{t(`roles.${membership.role}`)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t(`roles.${membership.role}`)}
+                  </span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -208,7 +233,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </Button>
 
-            <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={t("shell.notifications")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              aria-label={t("shell.notifications")}
+            >
               <Bell className="h-4 w-4" aria-hidden="true" />
             </Button>
 

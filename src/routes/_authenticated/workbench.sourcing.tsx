@@ -6,9 +6,15 @@ export const Route = createFileRoute("/_authenticated/workbench/sourcing")({
   head: () => ({
     meta: [
       { title: "Supply route — TenderReady" },
-      { name: "description", content: "Route each item to stock, import, local supplier or foreign RFQ." },
+      {
+        name: "description",
+        content: "Route each item to stock, import, local supplier or foreign RFQ.",
+      },
       { property: "og:title", content: "Supply route — TenderReady" },
-      { property: "og:description", content: "Route each item to stock, import, local supplier or foreign RFQ." },
+      {
+        property: "og:description",
+        content: "Route each item to stock, import, local supplier or foreign RFQ.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

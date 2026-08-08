@@ -49,7 +49,9 @@ function supabasePublishableKey(): string {
 
   const legacy = configuredEnv(["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"]);
   if (legacy) return legacy;
-  throw new Error("SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS, or SUPABASE_ANON_KEY is required");
+  throw new Error(
+    "SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS, or SUPABASE_ANON_KEY is required",
+  );
 }
 
 /** Forwards the verified OAuth bearer token so access rules run as the signed-in user. */
@@ -64,7 +66,9 @@ export function supabaseForUser(ctx: ToolContext) {
 
 export function notAuthenticated() {
   return {
-    content: [{ type: "text" as const, text: "Not authenticated. Reconnect this client and sign in." }],
+    content: [
+      { type: "text" as const, text: "Not authenticated. Reconnect this client and sign in." },
+    ],
     isError: true,
   };
 }
