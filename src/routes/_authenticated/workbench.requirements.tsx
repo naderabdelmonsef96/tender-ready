@@ -686,7 +686,7 @@ function Page() {
             </Panel>
           )}
 
-          <Panel title={t("approvals.title")} description={t("approvals.makerChecker")}>
+          <Panel title={t("approvals.title")} description={t("approvals.selfBlockedHelp")}>
             <div className="flex flex-col gap-3">
               {activeTask && (
                 <div className="flex flex-wrap items-center gap-2 text-sm">

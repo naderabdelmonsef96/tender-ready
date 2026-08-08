@@ -22,6 +22,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedAdminWorkflowsRouteImport } from './routes/_authenticated/admin.workflows'
+import { Route as AuthenticatedSettingsCatalogueRouteImport } from './routes/_authenticated/settings.catalogue'
 import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_authenticated/settings.company'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
 import { Route as AuthenticatedWorkbenchIntakeRouteImport } from './routes/_authenticated/workbench.intake'
@@ -99,6 +100,12 @@ const AuthenticatedAdminWorkflowsRoute =
     path: '/admin/workflows',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsCatalogueRoute =
+  AuthenticatedSettingsCatalogueRouteImport.update({
+    id: '/settings/catalogue',
+    path: '/settings/catalogue',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsCompanyRoute =
   AuthenticatedSettingsCompanyRouteImport.update({
     id: '/settings/company',
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
+  '/settings/catalogue': typeof AuthenticatedSettingsCatalogueRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
@@ -183,6 +191,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
+  '/settings/catalogue': typeof AuthenticatedSettingsCatalogueRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
@@ -207,6 +216,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
+  '/_authenticated/settings/catalogue': typeof AuthenticatedSettingsCatalogueRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/workflows'
+    | '/settings/catalogue'
     | '/settings/company'
     | '/settings/users'
     | '/workbench/intake'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/workflows'
+    | '/settings/catalogue'
     | '/settings/company'
     | '/settings/users'
     | '/workbench/intake'
@@ -276,6 +288,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/workflows'
+    | '/_authenticated/settings/catalogue'
     | '/_authenticated/settings/company'
     | '/_authenticated/settings/users'
     | '/_authenticated/workbench/intake'
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkflowsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/catalogue': {
+      id: '/_authenticated/settings/catalogue'
+      path: '/settings/catalogue'
+      fullPath: '/settings/catalogue'
+      preLoaderRoute: typeof AuthenticatedSettingsCatalogueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/company': {
       id: '/_authenticated/settings/company'
       path: '/settings/company'
@@ -455,6 +475,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedAdminWorkflowsRoute: typeof AuthenticatedAdminWorkflowsRoute
+  AuthenticatedSettingsCatalogueRoute: typeof AuthenticatedSettingsCatalogueRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedWorkbenchIntakeRoute: typeof AuthenticatedWorkbenchIntakeRoute
@@ -470,6 +491,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedAdminWorkflowsRoute: AuthenticatedAdminWorkflowsRoute,
+  AuthenticatedSettingsCatalogueRoute: AuthenticatedSettingsCatalogueRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedWorkbenchIntakeRoute: AuthenticatedWorkbenchIntakeRoute,

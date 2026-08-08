@@ -1,6 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Boxes,
   ClipboardList,
+
   Coins,
   FileSpreadsheet,
   FileText,
@@ -71,6 +73,8 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: "/settings/company", labelKey: "nav.company", icon: FileText },
       { to: "/settings/users", labelKey: "nav.users", icon: Users },
+      { to: "/settings/catalogue", labelKey: "nav.catalogues", icon: Boxes },
+
       { to: "/admin/workflows", labelKey: "nav.workflows", icon: Workflow },
     ],
   },

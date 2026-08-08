@@ -25,7 +25,6 @@ export type ExtractedSource = {
   pageNumber?: number | null;
 };
 
-
 export type ExtractedItem = {
   sheetName: string;
   sheetIndex: number;
