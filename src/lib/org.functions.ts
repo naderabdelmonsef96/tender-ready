@@ -17,7 +17,9 @@ export const getMyContext = createServerFn({ method: "GET" })
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase
         .from("organization_memberships")
-        .select("id, role, status, organization_id, organizations(id, name, name_ar, slug, base_currency)")
+        .select(
+          "id, role, status, organization_id, organizations(id, name, name_ar, slug, base_currency)",
+        )
         .eq("user_id", userId)
         .eq("status", "active"),
     ]);
@@ -36,7 +38,12 @@ export const getMyContext = createServerFn({ method: "GET" })
   });
 
 async function assertAdmin(
-  supabase: { rpc: (fn: "has_org_role", args: { _org: string; _role: AppRole }) => PromiseLike<{ data: boolean | null }> },
+  supabase: {
+    rpc: (
+      fn: "has_org_role",
+      args: { _org: string; _role: AppRole },
+    ) => PromiseLike<{ data: boolean | null }>;
+  },
   organizationId: string,
 ) {
   const { data } = await supabase.rpc("has_org_role", { _org: organizationId, _role: "org_admin" });
@@ -190,7 +197,9 @@ export const updateMemberRole = createServerFn({ method: "POST" })
 
 export const removeMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => orgInput.extend({ membershipId: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) =>
+    orgInput.extend({ membershipId: z.string().uuid() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, data.organizationId);
 

@@ -14,7 +14,13 @@ export default defineTool({
       .enum(["open", "won", "lost", "cancelled", "archived"])
       .nullable()
       .describe("Optional tender status filter; null for all."),
-    limit: z.number().int().min(1).max(100).nullable().describe("Maximum rows to return; null means 25."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .nullable()
+      .describe("Maximum rows to return; null means 25."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ organizationId, status, limit }, ctx) => {

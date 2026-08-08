@@ -24,7 +24,8 @@ export const Route = createFileRoute("/_authenticated/approvals")({
       { title: "Approval inbox — TenderReady" },
       {
         name: "description",
-        content: "Stage decisions waiting on your role, with maker-checker separation enforced server-side.",
+        content:
+          "Stage decisions waiting on your role, with maker-checker separation enforced server-side.",
       },
       { property: "og:title", content: "Approval inbox — TenderReady" },
       { property: "og:description", content: "Tender stage decisions assigned to your role." },
@@ -74,10 +75,16 @@ function ApprovalsPage() {
             ) : (
               <ul className="divide-y divide-border">
                 {query.data.items.map((item) => (
-                  <li key={item.tenderId} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+                  <li
+                    key={item.tenderId}
+                    className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-medium tabular-nums text-muted-foreground" data-ltr>
+                        <span
+                          className="text-xs font-medium tabular-nums text-muted-foreground"
+                          data-ltr
+                        >
                           {item.reference}
                         </span>
                         <StageBadge stage={item.stage} />
@@ -87,8 +94,9 @@ function ApprovalsPage() {
                         {item.title}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {(language === "ar" ? item.stageNameAr ?? item.stageName : item.stageName) ??
-                          t("approvals.stage")}
+                        {(language === "ar"
+                          ? (item.stageNameAr ?? item.stageName)
+                          : item.stageName) ?? t("approvals.stage")}
                         {" · "}
                         {t("approvals.waitingOn")}:{" "}
                         {item.approverRole ? t(`roles.${item.approverRole}`) : t("common.none")}

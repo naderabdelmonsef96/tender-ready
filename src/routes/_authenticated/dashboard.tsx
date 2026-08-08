@@ -125,13 +125,16 @@ function DashboardPage() {
                     {query.data.tenders.map((tender) => {
                       const remaining = daysUntil(tender.deadline);
                       return (
-                        <tr key={tender.id} className="border-b border-border/70 last:border-0 align-top">
+                        <tr
+                          key={tender.id}
+                          className="border-b border-border/70 last:border-0 align-top"
+                        >
                           <td className="px-4 py-3 font-medium tabular-nums" data-ltr>
                             {tender.reference}
                           </td>
                           <td className="max-w-[22rem] px-4 py-3">
                             <span className="block truncate font-medium" title={tender.title}>
-                              {language === "ar" ? tender.titleAr ?? tender.title : tender.title}
+                              {language === "ar" ? (tender.titleAr ?? tender.title) : tender.title}
                             </span>
                             {tender.location && (
                               <span className="block truncate text-xs text-muted-foreground">
@@ -143,7 +146,7 @@ function DashboardPage() {
                             <span className="block truncate">
                               {tender.client
                                 ? language === "ar"
-                                  ? tender.client.nameAr ?? tender.client.name
+                                  ? (tender.client.nameAr ?? tender.client.name)
                                   : tender.client.name
                                 : t("common.none")}
                             </span>
@@ -177,7 +180,10 @@ function DashboardPage() {
           <Panel title={t("dashboard.alerts")}>
             <p className="text-sm text-muted-foreground">
               {query.data.summary.awaitingApproval > 0 ? (
-                <Link to="/approvals" className="font-medium text-primary underline-offset-4 hover:underline">
+                <Link
+                  to="/approvals"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
                   {t("approvals.title")}
                 </Link>
               ) : (

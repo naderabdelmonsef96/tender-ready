@@ -26,7 +26,10 @@ export const getDashboard = createServerFn({ method: "GET" })
         )
         .eq("organization_id", data.organizationId)
         .order("submission_deadline", { ascending: true, nullsFirst: false }),
-      supabase.from("feature_flags").select("flag_key, enabled").eq("organization_id", data.organizationId),
+      supabase
+        .from("feature_flags")
+        .select("flag_key, enabled")
+        .eq("organization_id", data.organizationId),
     ]);
 
     if (tendersResult.error) throw new Error(tendersResult.error.message);
@@ -49,7 +52,9 @@ export const getDashboard = createServerFn({ method: "GET" })
         stageState: t.stage_state,
         status: t.status,
         updatedAt: t.updated_at,
-        client: t.clients ? { id: t.clients.id, name: t.clients.name, nameAr: t.clients.name_ar } : null,
+        client: t.clients
+          ? { id: t.clients.id, name: t.clients.name, nameAr: t.clients.name_ar }
+          : null,
       })),
       summary: {
         open: tenders.filter((t) => t.status === "open").length,
@@ -88,7 +93,9 @@ export const getApprovalQueue = createServerFn({ method: "GET" })
         .order("stage_order"),
       supabase
         .from("tenders")
-        .select("id, reference, title, current_stage, stage_state, created_by, owner_id, updated_at")
+        .select(
+          "id, reference, title, current_stage, stage_state, created_by, owner_id, updated_at",
+        )
         .eq("organization_id", data.organizationId)
         .in("stage_state", ["submitted", "in_review", "changes_requested"]),
     ]);
@@ -112,7 +119,8 @@ export const getApprovalQueue = createServerFn({ method: "GET" })
         approverRole: stage?.approver_role ?? null,
         slaHours: stage?.sla_hours ?? null,
         updatedAt: t.updated_at,
-        isForMyRole: !!stage && !!myRole && (stage.approver_role === myRole || myRole === "org_admin"),
+        isForMyRole:
+          !!stage && !!myRole && (stage.approver_role === myRole || myRole === "org_admin"),
         selfApprovalBlocked: isMine,
       };
     });
@@ -128,7 +136,9 @@ export const getAuditTrail = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: events, error } = await context.supabase
       .from("audit_events")
-      .select("id, actor_email, actor_id, action, object_type, object_id, is_material, summary, created_at")
+      .select(
+        "id, actor_email, actor_id, action, object_type, object_id, is_material, summary, created_at",
+      )
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -148,10 +158,15 @@ export const getWorkflow = createServerFn({ method: "GET" })
         .order("version", { ascending: false }),
       context.supabase
         .from("workflow_stages")
-        .select("id, stage, stage_order, name, name_ar, approver_role, sla_hours, blocks_release, requires_note_on_reject")
+        .select(
+          "id, stage, stage_order, name, name_ar, approver_role, sla_hours, blocks_release, requires_note_on_reject",
+        )
         .eq("organization_id", data.organizationId)
         .order("stage_order"),
-      context.supabase.from("feature_flags").select("flag_key, enabled").eq("organization_id", data.organizationId),
+      context.supabase
+        .from("feature_flags")
+        .select("flag_key, enabled")
+        .eq("organization_id", data.organizationId),
     ]);
 
     if (stagesResult.error) throw new Error(stagesResult.error.message);
@@ -197,19 +212,19 @@ export const getMembers = createServerFn({ method: "GET" })
     const userIds = memberships.map((m) => m.user_id).filter((id): id is string => !!id);
 
     const profiles = userIds.length
-      ? (
+      ? ((
           await context.supabase
             .from("profiles")
             .select("id, full_name, full_name_ar, email, job_title")
             .in("id", userIds)
-        ).data ?? []
+        ).data ?? [])
       : [];
 
     return {
       isAdmin: isAdmin === true,
       currentUserId: context.userId,
       members: memberships.map((m) => {
-        const profile = m.user_id ? profiles.find((p) => p.id === m.user_id) ?? null : null;
+        const profile = m.user_id ? (profiles.find((p) => p.id === m.user_id) ?? null) : null;
         return {
           id: m.id,
           userId: m.user_id,

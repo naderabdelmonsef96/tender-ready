@@ -20,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/settings/company")({
       { title: "Company settings — TenderReady" },
       {
         name: "description",
-        content: "Legal identity, contact details and quotation defaults used on every client-facing document.",
+        content:
+          "Legal identity, contact details and quotation defaults used on every client-facing document.",
       },
       { property: "og:title", content: "Company settings — TenderReady" },
       { property: "og:description", content: "Manage the identity printed on your quotations." },
@@ -74,15 +75,7 @@ const emptyForm: FormState = {
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
-function Field({
-  id,
-  label,
-  children,
-}: {
-  id: string;
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0 space-y-1.5">
       <Label htmlFor={id} className="text-xs font-medium text-muted-foreground">
@@ -163,8 +156,9 @@ function CompanySettingsPage() {
   });
 
   const isAdmin = query.data?.isAdmin === true;
-  const set = (key: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  const set =
+    (key: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [key]: event.target.value }));
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
@@ -208,7 +202,12 @@ function CompanySettingsPage() {
             <Panel title={t("settings.identity")}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="legal_name" label={t("settings.legalName")}>
-                  <Input id="legal_name" required value={form.legal_name} onChange={set("legal_name")} />
+                  <Input
+                    id="legal_name"
+                    required
+                    value={form.legal_name}
+                    onChange={set("legal_name")}
+                  />
                 </Field>
                 <Field id="legal_name_ar" label={t("settings.legalNameAr")}>
                   <Input
@@ -224,22 +223,41 @@ function CompanySettingsPage() {
             <Panel title={t("settings.contact")}>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <Field id="address_line1" label={t("settings.address1")}>
-                  <Input id="address_line1" value={form.address_line1} onChange={set("address_line1")} />
+                  <Input
+                    id="address_line1"
+                    value={form.address_line1}
+                    onChange={set("address_line1")}
+                  />
                 </Field>
                 <Field id="address_line2" label={t("settings.address2")}>
-                  <Input id="address_line2" value={form.address_line2} onChange={set("address_line2")} />
+                  <Input
+                    id="address_line2"
+                    value={form.address_line2}
+                    onChange={set("address_line2")}
+                  />
                 </Field>
                 <Field id="city" label={t("settings.city")}>
                   <Input id="city" value={form.city} onChange={set("city")} />
                 </Field>
                 <Field id="country" label={t("settings.country")}>
-                  <Input id="country" maxLength={2} value={form.country} onChange={set("country")} />
+                  <Input
+                    id="country"
+                    maxLength={2}
+                    value={form.country}
+                    onChange={set("country")}
+                  />
                 </Field>
                 <Field id="phone" label={t("settings.phone")}>
                   <Input id="phone" dir="ltr" value={form.phone} onChange={set("phone")} />
                 </Field>
                 <Field id="email" label={t("common.email")}>
-                  <Input id="email" type="email" dir="ltr" value={form.email} onChange={set("email")} />
+                  <Input
+                    id="email"
+                    type="email"
+                    dir="ltr"
+                    value={form.email}
+                    onChange={set("email")}
+                  />
                 </Field>
                 <Field id="website" label={t("settings.website")}>
                   <Input id="website" dir="ltr" value={form.website} onChange={set("website")} />
@@ -250,7 +268,12 @@ function CompanySettingsPage() {
             <Panel title={t("settings.finance")}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="tax_number" label={t("settings.taxNumber")}>
-                  <Input id="tax_number" dir="ltr" value={form.tax_number} onChange={set("tax_number")} />
+                  <Input
+                    id="tax_number"
+                    dir="ltr"
+                    value={form.tax_number}
+                    onChange={set("tax_number")}
+                  />
                 </Field>
                 <Field id="commercial_registration" label={t("settings.commercialRegistration")}>
                   <Input
@@ -305,7 +328,12 @@ function CompanySettingsPage() {
                   </Field>
                 </div>
                 <Field id="footer_text" label={t("settings.footerText")}>
-                  <Textarea id="footer_text" rows={2} value={form.footer_text} onChange={set("footer_text")} />
+                  <Textarea
+                    id="footer_text"
+                    rows={2}
+                    value={form.footer_text}
+                    onChange={set("footer_text")}
+                  />
                 </Field>
                 <Field id="signature_block" label={t("settings.signatureBlock")}>
                   <Textarea

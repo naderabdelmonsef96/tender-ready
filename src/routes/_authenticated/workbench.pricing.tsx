@@ -6,9 +6,15 @@ export const Route = createFileRoute("/_authenticated/workbench/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing builder — TenderReady" },
-      { name: "description", content: "Landed cost and selling price with editable commercial factors." },
+      {
+        name: "description",
+        content: "Landed cost and selling price with editable commercial factors.",
+      },
       { property: "og:title", content: "Pricing builder — TenderReady" },
-      { property: "og:description", content: "Landed cost and selling price with editable commercial factors." },
+      {
+        property: "og:description",
+        content: "Landed cost and selling price with editable commercial factors.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

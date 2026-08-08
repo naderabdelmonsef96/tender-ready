@@ -39,10 +39,14 @@ export const Route = createFileRoute("/_authenticated/settings/users")({
       { title: "Users & roles — TenderReady" },
       {
         name: "description",
-        content: "Invite colleagues and assign maker, checker and approval roles for your organization.",
+        content:
+          "Invite colleagues and assign maker, checker and approval roles for your organization.",
       },
       { property: "og:title", content: "Users & roles — TenderReady" },
-      { property: "og:description", content: "Role-based access for the tender governance workflow." },
+      {
+        property: "og:description",
+        content: "Role-based access for the tender governance workflow.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -76,7 +80,8 @@ function UsersPage() {
   };
 
   const inviteMutation = useMutation({
-    mutationFn: () => invite({ data: { organizationId, email: inviteEmail.trim(), role: inviteRole } }),
+    mutationFn: () =>
+      invite({ data: { organizationId, email: inviteEmail.trim(), role: inviteRole } }),
     onSuccess: () => {
       toast.success(t("settings.invited"));
       setInviteEmail("");
@@ -134,7 +139,10 @@ function UsersPage() {
                 }}
               >
                 <div className="min-w-0 space-y-1.5">
-                  <Label htmlFor="inviteEmail" className="text-xs font-medium text-muted-foreground">
+                  <Label
+                    htmlFor="inviteEmail"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
                     {t("common.email")}
                   </Label>
                   <Input
@@ -150,7 +158,10 @@ function UsersPage() {
                   <Label htmlFor="inviteRole" className="text-xs font-medium text-muted-foreground">
                     {t("common.role")}
                   </Label>
-                  <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as AppRole)}>
+                  <Select
+                    value={inviteRole}
+                    onValueChange={(value) => setInviteRole(value as AppRole)}
+                  >
                     <SelectTrigger id="inviteRole">
                       <SelectValue />
                     </SelectTrigger>
@@ -194,11 +205,17 @@ function UsersPage() {
                 </thead>
                 <tbody>
                   {query.data.members.map((member) => {
-                    const isSelf = member.userId !== null && member.userId === query.data.currentUserId;
+                    const isSelf =
+                      member.userId !== null && member.userId === query.data.currentUserId;
                     const name =
-                      (language === "ar" ? member.fullNameAr ?? member.fullName : member.fullName) ?? null;
+                      (language === "ar"
+                        ? (member.fullNameAr ?? member.fullName)
+                        : member.fullName) ?? null;
                     return (
-                      <tr key={member.id} className="border-b border-border/70 align-top last:border-0">
+                      <tr
+                        key={member.id}
+                        className="border-b border-border/70 align-top last:border-0"
+                      >
                         <td className="max-w-[20rem] px-4 py-3">
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="truncate font-medium">
@@ -224,7 +241,10 @@ function UsersPage() {
                             <Select
                               value={member.role}
                               onValueChange={(value) =>
-                                roleMutation.mutate({ membershipId: member.id, role: value as AppRole })
+                                roleMutation.mutate({
+                                  membershipId: member.id,
+                                  role: value as AppRole,
+                                })
                               }
                             >
                               <SelectTrigger className="h-9 w-full max-w-[15rem]">
@@ -262,7 +282,9 @@ function UsersPage() {
                               {t("settings.remove")}
                             </Button>
                           ) : (
-                            <span className="text-xs text-muted-foreground">{t("common.none")}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {t("common.none")}
+                            </span>
                           )}
                         </td>
                       </tr>

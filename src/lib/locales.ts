@@ -105,8 +105,7 @@ export const en = {
     passwordUpdated: "Password updated. You are signed in.",
     checkEmail: "Check your email to confirm your account before signing in.",
     noAccess: "Your account has no active organization membership yet.",
-    noAccessHelp:
-      "Ask an organization admin to invite your email address, then sign in again.",
+    noAccessHelp: "Ask an organization admin to invite your email address, then sign in again.",
     backToSignIn: "Back to sign in",
     haveAccount: "Already have an account?",
     needAccount: "Need an account?",
@@ -225,8 +224,7 @@ export const en = {
     phase4: "Phase 4",
     phase5: "Phase 5",
     notice: "Not built yet",
-    body:
-      "This screen is part of the approved design and is scheduled for {{phase}}. The foundation it depends on — organizations, roles, access rules, private file storage and the audit trail — is live now.",
+    body: "This screen is part of the approved design and is scheduled for {{phase}}. The foundation it depends on — organizations, roles, access rules, private file storage and the audit trail — is live now.",
   },
   demo: {
     label: "Demo role view",
@@ -459,8 +457,7 @@ export const ar: typeof en = {
     phase4: "المرحلة ٤",
     phase5: "المرحلة ٥",
     notice: "لم يُبنَ بعد",
-    body:
-      "هذه الشاشة جزء من التصميم المعتمد ومجدولة في {{phase}}. الأساس الذي تعتمد عليه — المؤسسات والأدوار وقواعد الوصول وتخزين الملفات الخاص وسجل التتبع — يعمل الآن.",
+    body: "هذه الشاشة جزء من التصميم المعتمد ومجدولة في {{phase}}. الأساس الذي تعتمد عليه — المؤسسات والأدوار وقواعد الوصول وتخزين الملفات الخاص وسجل التتبع — يعمل الآن.",
   },
   demo: {
     label: "عرض دور تجريبي",

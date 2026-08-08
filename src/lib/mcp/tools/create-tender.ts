@@ -10,10 +10,19 @@ export default defineTool({
     "Create a draft tender header in one of the signed-in user's organizations. Only proposal engineers and organization admins may create tenders. Does not upload files or invent commercial values.",
   inputSchema: {
     organizationId: z.string().uuid().describe("Organization id from list_organizations."),
-    reference: z.string().trim().min(2).max(60).describe("Unique tender reference, e.g. TND-2026-014."),
+    reference: z
+      .string()
+      .trim()
+      .min(2)
+      .max(60)
+      .describe("Unique tender reference, e.g. TND-2026-014."),
     title: z.string().trim().min(3).max(300).describe("Tender title in English."),
     titleAr: z.string().trim().max(300).nullable().describe("Tender title in Arabic, or null."),
-    clientId: z.string().uuid().nullable().describe("Client id from list_clients, or null if not yet known."),
+    clientId: z
+      .string()
+      .uuid()
+      .nullable()
+      .describe("Client id from list_clients, or null if not yet known."),
     projectLocation: z.string().trim().max(200).nullable().describe("Project location, or null."),
     submissionDeadline: z
       .string()
@@ -22,7 +31,12 @@ export default defineTool({
       .describe("Submission deadline as YYYY-MM-DD, or null."),
     notes: z.string().trim().max(2000).nullable().describe("Free-text notes, or null."),
   },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  },
   handler: async (input, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const userId = ctx.getUserId() ?? null;

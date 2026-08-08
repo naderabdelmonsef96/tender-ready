@@ -6,9 +6,15 @@ export const Route = createFileRoute("/_authenticated/workbench/review")({
   head: () => ({
     meta: [
       { title: "Commercial review & quotation — TenderReady" },
-      { name: "description", content: "Final review, maker-checker approval and quotation release." },
+      {
+        name: "description",
+        content: "Final review, maker-checker approval and quotation release.",
+      },
       { property: "og:title", content: "Commercial review & quotation — TenderReady" },
-      { property: "og:description", content: "Final review, maker-checker approval and quotation release." },
+      {
+        property: "og:description",
+        content: "Final review, maker-checker approval and quotation release.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

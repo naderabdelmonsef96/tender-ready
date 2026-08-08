@@ -4,7 +4,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
-type OAuthClient = { name?: string | null; client_id?: string | null; redirect_uri?: string | null };
+type OAuthClient = {
+  name?: string | null;
+  client_id?: string | null;
+  redirect_uri?: string | null;
+};
 type AuthorizationDetails = {
   client?: OAuthClient | null;
   scope?: string | null;
@@ -24,7 +28,8 @@ type OAuthApi = {
 
 function oauthApi(): OAuthApi {
   const api = (supabase.auth as unknown as { oauth?: OAuthApi }).oauth;
-  if (!api) throw new Error("This project's authentication service does not expose the OAuth consent API.");
+  if (!api)
+    throw new Error("This project's authentication service does not expose the OAuth consent API.");
   return api;
 }
 
@@ -38,7 +43,8 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   // Browser-only: the Supabase client reads its session from localStorage.
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
-    authorization_id: typeof search["authorization_id"] === "string" ? search["authorization_id"] : "",
+    authorization_id:
+      typeof search["authorization_id"] === "string" ? search["authorization_id"] : "",
   }),
   beforeLoad: async ({ search, location }) => {
     if (!search.authorization_id) throw new Error("Missing authorization_id in the consent URL.");
@@ -58,7 +64,10 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   head: () => ({
     meta: [
       { title: "Authorize access — TenderReady" },
-      { name: "description", content: "Approve or deny an application requesting access to your TenderReady account." },
+      {
+        name: "description",
+        content: "Approve or deny an application requesting access to your TenderReady account.",
+      },
       { property: "og:title", content: "Authorize access — TenderReady" },
       {
         property: "og:description",
@@ -119,9 +128,12 @@ function ConsentPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-foreground">Connect {clientName} to TenderReady</h1>
+        <h1 className="text-xl font-semibold text-foreground">
+          Connect {clientName} to TenderReady
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This lets {clientName} use TenderReady as you, limited to the organizations you are a member of.
+          This lets {clientName} use TenderReady as you, limited to the organizations you are a
+          member of.
         </p>
 
         {details?.client?.redirect_uri && (
@@ -133,7 +145,9 @@ function ConsentPage() {
         {scopes.length > 0 && (
           <ul className="mt-6 space-y-2 text-sm text-foreground">
             {scopes.map((scope) => (
-              <li key={scope}>• {SCOPE_LABELS[scope] ?? `Additional permission requested: ${scope}`}</li>
+              <li key={scope}>
+                • {SCOPE_LABELS[scope] ?? `Additional permission requested: ${scope}`}
+              </li>
             ))}
           </ul>
         )}
@@ -152,7 +166,12 @@ function ConsentPage() {
           <Button className="sm:flex-1" disabled={busy} onClick={() => void decide(true)}>
             {busy ? "Please wait…" : "Approve"}
           </Button>
-          <Button variant="outline" className="sm:flex-1" disabled={busy} onClick={() => void decide(false)}>
+          <Button
+            variant="outline"
+            className="sm:flex-1"
+            disabled={busy}
+            onClick={() => void decide(false)}
+          >
             Cancel connection
           </Button>
         </div>
