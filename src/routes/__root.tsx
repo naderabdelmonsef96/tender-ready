@@ -113,7 +113,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // The LanguageProvider swaps lang/dir on the client; these are the SSR defaults.
+    <html lang="en" dir="ltr">
       <head>
         <HeadContent />
       </head>
