@@ -374,7 +374,7 @@ export const getRegister = createServerFn({ method: "GET" })
       supabase
         .from("boq_items")
         .select(
-          "id, sheet_name, sheet_index, display_order, item_code, description, description_ar, unit, quantity, rate_only, section_path, criticality, status, confidence, notes, exclusion_reason, override_reason, version, reviewed_by, source_reference_id, source_references(sheet_name, sheet_index, row_index, cell_ref, raw_text, normalized_text, confidence, document_versions(version_no, tender_files(original_name)))",
+          "id, sheet_name, sheet_index, display_order, item_code, description, description_ar, unit, quantity, rate_only, section_path, criticality, status, confidence, notes, exclusion_reason, override_reason, version, reviewed_by, source_reference_id, source_references(sheet_name, sheet_index, row_index, cell_ref, page_number, raw_text, normalized_text, confidence, document_versions(version_no, tender_files(original_name)))",
         )
         .eq("tender_id", data.tenderId)
         .order("sheet_index")
@@ -382,7 +382,7 @@ export const getRegister = createServerFn({ method: "GET" })
       supabase
         .from("requirements")
         .select(
-          "id, category, text, text_ar, criticality, status, confidence, override_reason, version, source_reference_id, source_references(sheet_name, row_index, cell_ref, raw_text, normalized_text, confidence, document_versions(version_no, tender_files(original_name)))",
+          "id, category, text, text_ar, criticality, status, confidence, override_reason, version, source_reference_id, source_references(sheet_name, row_index, cell_ref, page_number, raw_text, normalized_text, confidence, document_versions(version_no, tender_files(original_name)))",
         )
         .eq("tender_id", data.tenderId)
         .order("category"),

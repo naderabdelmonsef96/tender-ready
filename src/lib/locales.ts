@@ -246,7 +246,8 @@ export const en = {
     notes: "Internal notes",
     files: "Tender files",
     filesHint:
-      "Spreadsheets are ingested now. Other formats are stored safely and wait for the document integration.",
+      "Upload spreadsheets, PDF, Word, images or text. Spreadsheets are parsed cell by cell; PDF, Word, scans and photos are read with document intelligence and every row keeps its page and original wording.",
+
     upload: "Upload file",
     uploading: "Uploading…",
     replace: "Replace",
@@ -307,6 +308,7 @@ export const en = {
     sheet: "Sheet",
     row: "Row",
     cell: "Cell",
+    page: "Page",
     rawText: "Original text",
     normalizedText: "Normalized text",
     noEvidence: "No source reference — a named override with a reason is required.",
@@ -609,7 +611,8 @@ export const ar: typeof en = {
     notes: "ملاحظات داخلية",
     files: "ملفات العطاء",
     filesHint:
-      "تُستخرج جداول البيانات الآن. الصيغ الأخرى تُخزَّن بأمان وتنتظر تكامل قراءة المستندات.",
+      "ارفع جداول بيانات أو PDF أو Word أو صورًا أو نصوصًا. تُحلَّل جداول البيانات خلية بخلية، وتُقرأ ملفات PDF وWord والصور الممسوحة بذكاء المستندات مع الاحتفاظ برقم الصفحة والنص الأصلي لكل بند.",
+
     upload: "رفع ملف",
     uploading: "جارٍ الرفع…",
     replace: "استبدال",
@@ -669,6 +672,7 @@ export const ar: typeof en = {
     sheet: "الورقة",
     row: "الصف",
     cell: "الخلية",
+    page: "الصفحة",
     rawText: "النص الأصلي",
     normalizedText: "النص المُوحَّد",
     noEvidence: "لا يوجد إسناد للمصدر — يلزم تجاوز موثّق باسم المراجع وسببه.",

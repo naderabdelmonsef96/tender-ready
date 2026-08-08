@@ -773,7 +773,9 @@ function Page() {
                   [t("register.file"), nameOf(evidence.ref)],
                   [t("register.sheet"), evidence.ref.sheet_name ?? "—"],
                   [t("register.row"), String(evidence.ref.row_index ?? "—")],
-                  [t("register.cell"), evidence.ref.cell_ref ?? "—"],
+                  [t("register.cell"), evidence.ref.cell_ref || "—"],
+                  [t("register.page"), String(evidence.ref.page_number ?? "—")],
+
                   [t("register.confidence"), String(evidence.ref.confidence ?? "—")],
                   [t("register.rawText"), evidence.ref.raw_text ?? "—"],
                   [t("register.normalizedText"), evidence.ref.normalized_text ?? "—"],

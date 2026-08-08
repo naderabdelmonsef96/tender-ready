@@ -84,7 +84,9 @@ function Page() {
   const canEdit = role === "org_admin" || role === "proposal_engineer";
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(
+    null,
+  );
   const [dragActive, setDragActive] = useState(false);
 
   const [replaceFileId, setReplaceFileId] = useState<string | null>(null);
@@ -226,7 +228,6 @@ function Page() {
       if (fileInput.current) fileInput.current.value = "";
     }
   }
-
 
   async function onDownload(storagePath: string) {
     if (!activeOrganizationId) return;
@@ -477,7 +478,7 @@ function Page() {
                     ref={fileInput}
                     type="file"
                     multiple={!replaceFileId}
-                    accept=".xlsx,.xls,.csv,.pdf"
+                    accept=".xlsx,.xlsm,.xls,.csv,.pdf,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,application/pdf,image/*"
                     className="hidden"
                     aria-label={t("intake.upload")}
                     onChange={(event) => {
@@ -496,7 +497,6 @@ function Page() {
                         : t("intake.uploading")
                       : t("intake.upload")}
                   </Button>
-
                 </>
               ) : (
                 <span className="text-xs text-muted-foreground">{t("intake.onlyMakers")}</span>
@@ -547,8 +547,6 @@ function Page() {
                   : t("intake.filesHint")}
               </div>
             )}
-
-
 
             {intake.versions.length === 0 ? (
               <EmptyState message={t("intake.noFiles")} />

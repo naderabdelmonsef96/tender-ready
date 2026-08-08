@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { extractWorkbook, type ExtractionResult } from "@/lib/boq-parse";
+import { extractDocument } from "@/lib/doc-extract.server";
+
 import { isSpreadsheet, readWorkbookSheets } from "@/lib/intake.server";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -66,14 +68,6 @@ export async function runExtraction(
     return data;
   };
 
-  if (!isSpreadsheet(version.file_name)) {
-    return finish({
-      status: "integration_required",
-      error_summary:
-        "This document type needs the document-intelligence integration. The file is stored safely; nothing was extracted or guessed.",
-    });
-  }
-
   await supabase
     .from("extraction_jobs")
     .update({ status: "running", started_at: new Date().toISOString() })
@@ -86,15 +80,26 @@ export async function runExtraction(
       error_summary: download.error?.message ?? "The stored file could not be read.",
     });
   }
+  const bytes = await download.data.arrayBuffer();
 
   let result: ExtractionResult;
-  try {
-    result = extractWorkbook(readWorkbookSheets(await download.data.arrayBuffer()));
-  } catch (error) {
-    return finish({
-      status: "failed",
-      error_summary: error instanceof Error ? error.message : "The workbook could not be parsed.",
+  if (isSpreadsheet(version.file_name)) {
+    try {
+      result = extractWorkbook(readWorkbookSheets(bytes));
+    } catch (error) {
+      return finish({
+        status: "failed",
+        error_summary: error instanceof Error ? error.message : "The workbook could not be parsed.",
+      });
+    }
+  } else {
+    const outcome = await extractDocument({
+      fileName: version.file_name,
+      mimeType: version.mime_type,
+      bytes,
     });
+    if (!outcome.ok) return finish({ status: outcome.status, error_summary: outcome.message });
+    result = outcome.result;
   }
 
   // Replace anything previously extracted from this document version.
@@ -122,6 +127,8 @@ export async function runExtraction(
           sheet_index: source.sheetIndex,
           row_index: source.rowIndex,
           cell_ref: source.cellRef,
+          page_number: source.pageNumber ?? null,
+
           raw_text: source.rawText,
           normalized_text: source.normalizedText,
           confidence: source.confidence,

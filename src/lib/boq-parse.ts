@@ -21,7 +21,10 @@ export type ExtractedSource = {
   rawText: string;
   normalizedText: string;
   confidence: number;
+  /** Page number for document (PDF/image/Word) sources; null for spreadsheets. */
+  pageNumber?: number | null;
 };
+
 
 export type ExtractedItem = {
   sheetName: string;
