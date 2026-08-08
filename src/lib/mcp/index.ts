@@ -20,5 +20,9 @@ export default defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [listOrganizationsTool, listTendersTool, getTenderTool, listClientsTool, createTenderTool],
+  // Cast: the SDK's tool list type is invariant under exactOptionalPropertyTypes,
+  // which rejects tools that simply omit the optional outputSchema.
+  tools: [listOrganizationsTool, listTendersTool, getTenderTool, listClientsTool, createTenderTool] as Parameters<
+    typeof defineMcp
+  >[0]["tools"],
 });
