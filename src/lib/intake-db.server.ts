@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { extractWorkbook, type ExtractionResult } from "@/lib/boq-parse";
+import { extractDocument } from "@/lib/doc-extract.server";
+
 import { isSpreadsheet, readWorkbookSheets } from "@/lib/intake.server";
 import type { Database } from "@/integrations/supabase/types";
 
