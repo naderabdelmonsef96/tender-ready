@@ -1,6 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Boxes,
   ClipboardList,
+
   Coins,
   FileSpreadsheet,
   FileText,
