@@ -477,7 +477,7 @@ function Page() {
                     ref={fileInput}
                     type="file"
                     multiple={!replaceFileId}
-                    accept=".xlsx,.xls,.csv,.pdf"
+                    accept=".xlsx,.xlsm,.xls,.csv,.pdf,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,application/pdf,image/*"
                     className="hidden"
                     aria-label={t("intake.upload")}
                     onChange={(event) => {
