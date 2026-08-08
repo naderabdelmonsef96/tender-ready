@@ -128,6 +128,8 @@ export async function runExtraction(
           sheet_index: source.sheetIndex,
           row_index: source.rowIndex,
           cell_ref: source.cellRef,
+          page_number: source.pageNumber ?? null,
+
           raw_text: source.rawText,
           normalized_text: source.normalizedText,
           confidence: source.confidence,
