@@ -212,34 +212,30 @@
 /* Arabic glyphs (Cairo / Noto Sans Arabic) have taller ascenders and deeper
    descenders than Inter, so Tailwind's tight leading clips them in RTL.
    These overrides only relax line-height; no other visual token changes. */
-html[dir="rtl"] .text-\[10px\],
-html[dir="rtl"] .text-\[11px\] {
-  line-height: 1.6;
+html[dir="rtl"] [class*="text-xs"] {
+  line-height: 1.35rem;
 }
-html[dir="rtl"] .text-xs {
-  line-height: 1.25rem;
+html[dir="rtl"] [class*="text-sm"] {
+  line-height: 1.55rem;
 }
-html[dir="rtl"] .text-sm {
-  line-height: 1.5rem;
+html[dir="rtl"] [class*="text-base"] {
+  line-height: 1.8rem;
 }
-html[dir="rtl"] .text-base {
-  line-height: 1.75rem;
+html[dir="rtl"] [class*="text-lg"] {
+  line-height: 1.95rem;
 }
-html[dir="rtl"] .text-lg {
-  line-height: 1.9rem;
+html[dir="rtl"] [class*="text-xl"] {
+  line-height: 2.15rem;
 }
-html[dir="rtl"] .text-xl {
-  line-height: 2.05rem;
+html[dir="rtl"] [class*="text-2xl"] {
+  line-height: 2.5rem;
 }
-html[dir="rtl"] .text-2xl {
-  line-height: 2.35rem;
+html[dir="rtl"] [class*="text-3xl"] {
+  line-height: 2.9rem;
 }
-html[dir="rtl"] .text-3xl {
-  line-height: 2.75rem;
+html[dir="rtl"] [class*="text-4xl"] {
+  line-height: 3.4rem;
 }
-html[dir="rtl"] .text-4xl {
-  line-height: 3.25rem;
-}
-html[dir="rtl"] .text-5xl {
-  line-height: 4rem;
+html[dir="rtl"] [class*="text-5xl"] {
+  line-height: 4.2rem;
 }
