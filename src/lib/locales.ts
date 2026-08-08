@@ -43,6 +43,7 @@ export const en = {
     catalogues: "Catalogues",
     quotationTemplate: "Quotation template",
     workbench: "Tender workbench",
+    audit: "Audit trail",
     governance: "Governance",
     administration: "Administration",
   },
