@@ -108,7 +108,6 @@ export async function runExtraction(
   await supabase.from("extraction_exceptions").delete().eq("document_version_id", version.id);
   await supabase.from("source_references").delete().eq("document_version_id", version.id);
 
-
   const sources = [
     ...result.items.map((item) => item.source),
     ...result.requirements.map((req) => req.source),

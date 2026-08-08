@@ -174,7 +174,8 @@ export async function extractDocument(input: {
       return {
         ok: false,
         status: "failed",
-        message: "The document reader is rate limited right now. Retry extraction in a few minutes.",
+        message:
+          "The document reader is rate limited right now. Retry extraction in a few minutes.",
       };
     }
     if (response.status === 402) {
