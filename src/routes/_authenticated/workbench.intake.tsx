@@ -523,6 +523,33 @@ function Page() {
               </div>
             )}
 
+            {canEdit && !replaceFileId && (
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragActive(false);
+                  if (event.dataTransfer.files.length > 0) void onUpload(event.dataTransfer.files);
+                }}
+                onClick={() => fileInput.current?.click()}
+                className={`mb-3 cursor-pointer rounded-xl border border-dashed p-4 text-center text-xs transition-colors ${
+                  dragActive
+                    ? "border-primary bg-primary/5 text-foreground"
+                    : "border-border text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                {uploading && uploadProgress
+                  ? `${t("intake.uploading")} ${uploadProgress.done}/${uploadProgress.total}`
+                  : t("intake.filesHint")}
+              </div>
+            )}
+
+
+
             {intake.versions.length === 0 ? (
               <EmptyState message={t("intake.noFiles")} />
             ) : (
