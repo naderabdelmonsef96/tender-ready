@@ -16,6 +16,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -56,6 +57,11 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/approvals'
+    | '/audit'
     | '/dashboard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/approvals'
+    | '/audit'
     | '/dashboard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/approvals'
+    | '/_authenticated/audit'
     | '/_authenticated/dashboard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -207,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/audit': {
+      id: '/_authenticated/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuthenticatedAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -233,11 +252,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
 }
 
