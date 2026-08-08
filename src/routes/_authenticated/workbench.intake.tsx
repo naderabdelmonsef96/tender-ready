@@ -158,50 +158,72 @@ function Page() {
     });
   }
 
-  async function onUpload(file: File) {
+  async function uploadOne(file: File, isReplace: boolean) {
     if (!activeOrganizationId || !tenderId) return;
-    setUploading(true);
-    try {
-      const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]+/g, "_");
-      const path = `${activeOrganizationId}/${tenderId}/${crypto.randomUUID()}-${safeName}`;
-      const upload = await supabase.storage.from("tender-files").upload(path, file, {
-        contentType: file.type || "application/octet-stream",
-      });
-      if (upload.error) throw new Error(upload.error.message);
+    const safeName = file.name.replace(/[^\w.\-\u0600-\u06FF]+/g, "_");
+    const path = `${activeOrganizationId}/${tenderId}/${crypto.randomUUID()}-${safeName}`;
+    const upload = await supabase.storage.from("tender-files").upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+    });
+    if (upload.error) throw new Error(upload.error.message);
 
-      const result = await register({
-        data: {
-          organizationId: activeOrganizationId,
-          tenderId,
-          storagePath: path,
-          originalName: file.name,
-          mimeType: file.type || null,
-          byteSize: file.size,
-          replaceFileId,
-          replaceReason: replaceFileId ? replaceReason || null : null,
-        },
-      });
-      if (result.duplicate) toast.warning(t("intake.duplicate"));
-      else toast.success(t("register.saved"));
+    const result = await register({
+      data: {
+        organizationId: activeOrganizationId,
+        tenderId,
+        storagePath: path,
+        originalName: file.name,
+        mimeType: file.type || null,
+        byteSize: file.size,
+        replaceFileId: isReplace ? replaceFileId : null,
+        replaceReason: isReplace ? replaceReason || null : null,
+      },
+    });
+    if (result.duplicate) {
+      toast.warning(`${file.name}: ${t("intake.duplicate")}`);
+      return;
+    }
+    ingestMutation.mutate({
+      data: {
+        organizationId: activeOrganizationId,
+        documentVersionId: result.documentVersionId,
+        idempotencyKey: `extract:${result.documentVersionId}`,
+      },
+    });
+  }
+
+  async function onUpload(files: FileList | File[]) {
+    if (!activeOrganizationId || !tenderId) return;
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    const isReplace = Boolean(replaceFileId);
+    const selected = isReplace ? list.slice(0, 1) : list;
+    setUploading(true);
+    setUploadProgress({ done: 0, total: selected.length });
+    let ok = 0;
+    try {
+      for (const [index, file] of selected.entries()) {
+        try {
+          await uploadOne(file, isReplace);
+          ok += 1;
+        } catch (error) {
+          toast.error(
+            `${file.name}: ${error instanceof Error ? error.message : t("common.unexpectedError")}`,
+          );
+        }
+        setUploadProgress({ done: index + 1, total: selected.length });
+      }
+      if (ok > 0) toast.success(t("register.saved"));
       setReplaceFileId(null);
       setReplaceReason("");
       invalidate();
-      if (!result.duplicate) {
-        ingestMutation.mutate({
-          data: {
-            organizationId: activeOrganizationId,
-            documentVersionId: result.documentVersionId,
-            idempotencyKey: `extract:${result.documentVersionId}`,
-          },
-        });
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("common.unexpectedError"));
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       if (fileInput.current) fileInput.current.value = "";
     }
   }
+
 
   async function onDownload(storagePath: string) {
     if (!activeOrganizationId) return;
