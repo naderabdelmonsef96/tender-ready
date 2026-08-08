@@ -246,7 +246,8 @@ export const en = {
     notes: "Internal notes",
     files: "Tender files",
     filesHint:
-      "Spreadsheets are ingested now. Other formats are stored safely and wait for the document integration.",
+      "Upload spreadsheets, PDF, Word, images or text. Spreadsheets are parsed cell by cell; PDF, Word, scans and photos are read with document intelligence and every row keeps its page and original wording.",
+
     upload: "Upload file",
     uploading: "Uploading…",
     replace: "Replace",
