@@ -48,8 +48,8 @@ export default defineTool({
         project_location: input.projectLocation,
         submission_deadline: input.submissionDeadline,
         notes: input.notes,
-        created_by: ctx.getUserId(),
-        owner_id: ctx.getUserId(),
+        created_by: userId,
+        owner_id: userId,
       })
       .select("id, reference, title, status, current_stage, stage_state, version")
       .single();
@@ -58,7 +58,7 @@ export default defineTool({
 
     await supabase.from("audit_events").insert({
       organization_id: input.organizationId,
-      actor_id: ctx.getUserId(),
+      actor_id: userId,
       action: "tender.created",
       object_type: "tender",
       object_id: data.id,
