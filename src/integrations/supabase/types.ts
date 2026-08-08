@@ -326,6 +326,122 @@ export type Database = {
           },
         ]
       }
+      catalogue_products: {
+        Row: {
+          base_cost: number | null
+          brand: string | null
+          catalogue_id: string
+          category: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string | null
+          organization_id: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_cost?: number | null
+          brand?: string | null
+          catalogue_id: string
+          category?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar?: string | null
+          organization_id: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_cost?: number | null
+          brand?: string | null
+          catalogue_id?: string
+          category?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string | null
+          organization_id?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_products_catalogue_id_fkey"
+            columns: ["catalogue_id"]
+            isOneToOne: false
+            referencedRelation: "catalogues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogues: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar?: string | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogues_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -872,6 +988,146 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_matches: {
+        Row: {
+          boq_item_id: string
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          failed_on: Json
+          id: string
+          matched_on: Json
+          note: string | null
+          organization_id: string
+          override_reason: string | null
+          product_id: string | null
+          score: number | null
+          state: Database["public"]["Enums"]["match_state"]
+          tender_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          boq_item_id: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          failed_on?: Json
+          id?: string
+          matched_on?: Json
+          note?: string | null
+          organization_id: string
+          override_reason?: string | null
+          product_id?: string | null
+          score?: number | null
+          state?: Database["public"]["Enums"]["match_state"]
+          tender_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          boq_item_id?: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          failed_on?: Json
+          id?: string
+          matched_on?: Json
+          note?: string | null
+          organization_id?: string
+          override_reason?: string | null
+          product_id?: string | null
+          score?: number | null
+          state?: Database["public"]["Enums"]["match_state"]
+          tender_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_matches_boq_item_id_fkey"
+            columns: ["boq_item_id"]
+            isOneToOne: true
+            referencedRelation: "boq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_matches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_matches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_matches_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_specifications: {
+        Row: {
+          created_at: string
+          id: string
+          normalized_value: string | null
+          organization_id: string
+          product_id: string
+          spec_key: string
+          spec_value: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          normalized_value?: string | null
+          organization_id: string
+          product_id: string
+          spec_key: string
+          spec_value: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          normalized_value?: string | null
+          organization_id?: string
+          product_id?: string
+          spec_key?: string
+          spec_value?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_specifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_specifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1069,6 +1325,292 @@ export type Database = {
             columns: ["tender_id"]
             isOneToOne: false
             referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sourcing_routes: {
+        Row: {
+          boq_item_id: string
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          incoterm: string | null
+          lead_time_days: number | null
+          note: string | null
+          organization_id: string
+          origin_country: string | null
+          product_id: string | null
+          route: Database["public"]["Enums"]["supply_route"]
+          supplier_quote_id: string | null
+          tender_id: string
+          updated_at: string
+          version: number
+          warehouse: string | null
+        }
+        Insert: {
+          boq_item_id: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          incoterm?: string | null
+          lead_time_days?: number | null
+          note?: string | null
+          organization_id: string
+          origin_country?: string | null
+          product_id?: string | null
+          route: Database["public"]["Enums"]["supply_route"]
+          supplier_quote_id?: string | null
+          tender_id: string
+          updated_at?: string
+          version?: number
+          warehouse?: string | null
+        }
+        Update: {
+          boq_item_id?: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          incoterm?: string | null
+          lead_time_days?: number | null
+          note?: string | null
+          organization_id?: string
+          origin_country?: string | null
+          product_id?: string | null
+          route?: Database["public"]["Enums"]["supply_route"]
+          supplier_quote_id?: string | null
+          tender_id?: string
+          updated_at?: string
+          version?: number
+          warehouse?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sourcing_routes_boq_item_id_fkey"
+            columns: ["boq_item_id"]
+            isOneToOne: true
+            referencedRelation: "boq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sourcing_routes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sourcing_routes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sourcing_routes_supplier_quote_id_fkey"
+            columns: ["supplier_quote_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sourcing_routes_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_positions: {
+        Row: {
+          created_at: string
+          id: string
+          lead_time_days: number
+          organization_id: string
+          product_id: string
+          quantity: number
+          updated_at: string
+          warehouse: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_time_days?: number
+          organization_id: string
+          product_id: string
+          quantity?: number
+          updated_at?: string
+          warehouse?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_time_days?: number
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+          warehouse?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_positions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_positions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_quotes: {
+        Row: {
+          boq_item_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          incoterm: string | null
+          kind: Database["public"]["Enums"]["supplier_kind"]
+          lead_time_days: number | null
+          note: string | null
+          organization_id: string
+          supplier_id: string | null
+          supplier_name: string
+          tender_id: string
+          unit_cost: number | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          boq_item_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          incoterm?: string | null
+          kind?: Database["public"]["Enums"]["supplier_kind"]
+          lead_time_days?: number | null
+          note?: string | null
+          organization_id: string
+          supplier_id?: string | null
+          supplier_name: string
+          tender_id: string
+          unit_cost?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          boq_item_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          incoterm?: string | null
+          kind?: Database["public"]["Enums"]["supplier_kind"]
+          lead_time_days?: number | null
+          note?: string | null
+          organization_id?: string
+          supplier_id?: string | null
+          supplier_name?: string
+          tender_id?: string
+          unit_cost?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_quotes_boq_item_id_fkey"
+            columns: ["boq_item_id"]
+            isOneToOne: false
+            referencedRelation: "boq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_quotes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_quotes_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          contact_person: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          kind: Database["public"]["Enums"]["supplier_kind"]
+          name: string
+          name_ar: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["supplier_kind"]
+          name: string
+          name_ar?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["supplier_kind"]
+          name?: string
+          name_ar?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1375,7 +1917,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_decide_match: { Args: { _org: string }; Returns: boolean }
+      can_decide_sourcing: { Args: { _org: string }; Returns: boolean }
       can_edit_intake: { Args: { _org: string }; Returns: boolean }
+      can_manage_catalogue: { Args: { _org: string }; Returns: boolean }
       can_review_technical: { Args: { _org: string }; Returns: boolean }
       has_any_org_role: {
         Args: {
@@ -1420,7 +1965,10 @@ export type Database = {
         | "failed"
         | "integration_required"
       item_review_status: "needs_review" | "reviewed" | "exception" | "excluded"
+      match_state: "unmatched" | "suggested" | "confirmed" | "out_of_portfolio"
       membership_status: "invited" | "active" | "suspended"
+      supplier_kind: "local" | "foreign"
+      supply_route: "ex_stock" | "import" | "local_supplier" | "foreign_rfq"
       tender_stage:
         | "intake"
         | "technical"
@@ -1589,7 +2137,10 @@ export const Constants = {
         "integration_required",
       ],
       item_review_status: ["needs_review", "reviewed", "exception", "excluded"],
+      match_state: ["unmatched", "suggested", "confirmed", "out_of_portfolio"],
       membership_status: ["invited", "active", "suspended"],
+      supplier_kind: ["local", "foreign"],
+      supply_route: ["ex_stock", "import", "local_supplier", "foreign_rfq"],
       tender_stage: [
         "intake",
         "technical",
