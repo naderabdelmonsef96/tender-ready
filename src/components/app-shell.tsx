@@ -4,7 +4,7 @@ import { Bell, Building2, ChevronDown, Languages, LogOut, Menu, PanelLeftClose, 
 import { useState, type ReactNode } from "react";
 
 import { navGroups, NavLink, useCurrentPath } from "@/components/app-nav";
-import { useAppTranslation } from "@/components/language-provider";
+import { useAppTranslation, useLanguage } from "@/components/language-provider";
 import { useWorkspace } from "@/components/workspace-provider";
 import logo from "@/assets/tenderready-logo.png";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ function BrandMark({ collapsed }: { collapsed: boolean }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, language, direction } = useAppTranslation();
-  const { toggleLanguage } = useAppTranslationLanguage();
+  const { toggleLanguage } = useLanguage();
   const workspace = useWorkspace();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -252,11 +252,3 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
-
-// Kept separate so the shell can read the toggle without prop drilling.
-function useAppTranslationLanguage() {
-  const { toggleLanguage } = useLanguageInternal();
-  return { toggleLanguage };
-}
-
-import { useLanguage as useLanguageInternal } from "@/components/language-provider";
