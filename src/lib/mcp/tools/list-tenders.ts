@@ -11,7 +11,7 @@ export default defineTool({
   inputSchema: {
     organizationId: z.string().uuid().describe("Organization id from list_organizations."),
     status: z
-      .enum(["open", "won", "lost", "no_bid", "archived"])
+      .enum(["open", "won", "lost", "cancelled", "archived"])
       .nullable()
       .describe("Optional tender status filter; null for all."),
     limit: z.number().int().min(1).max(100).nullable().describe("Maximum rows to return; null means 25."),
