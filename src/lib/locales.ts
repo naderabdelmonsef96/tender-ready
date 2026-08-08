@@ -279,6 +279,7 @@ export const ar: typeof en = {
     catalogues: "كتالوجات المنتجات",
     quotationTemplate: "قالب عرض السعر",
     workbench: "منصة العطاء",
+    audit: "سجل التتبع",
     governance: "الحوكمة",
     administration: "الإدارة",
   },
