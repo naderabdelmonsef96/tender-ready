@@ -291,7 +291,9 @@ function Page() {
             </table>
           </TableScroll>
         )}
-        {!canManage && <p className="mt-3 text-xs text-muted-foreground">{t("catalogue.onlyAdmin")}</p>}
+        {!canManage && (
+          <p className="mt-3 text-xs text-muted-foreground">{t("catalogue.onlyAdmin")}</p>
+        )}
       </Panel>
 
       <Dialog open={Boolean(form)} onOpenChange={(open) => !open && setForm(null)}>
@@ -382,7 +384,10 @@ function Page() {
                     onClick={() =>
                       setForm((current) =>
                         current
-                          ? { ...current, specs: [...current.specs, { key: "", value: "", unit: "" }] }
+                          ? {
+                              ...current,
+                              specs: [...current.specs, { key: "", value: "", unit: "" }],
+                            }
                           : current,
                       )
                     }

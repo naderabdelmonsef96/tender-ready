@@ -333,7 +333,10 @@ function Page() {
               <ErrorState
                 message={t("portfolio.catalogueEmpty")}
                 action={
-                  <Button variant="outline" onClick={() => void navigate({ to: "/settings/catalogue" })}>
+                  <Button
+                    variant="outline"
+                    onClick={() => void navigate({ to: "/settings/catalogue" })}
+                  >
                     {t("catalogue.title")}
                   </Button>
                 }
@@ -613,7 +616,9 @@ function Page() {
                   <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
                 )}
                 {!activeTask && counts.pending > 0 && (
-                  <p className="text-xs text-warning">{t("portfolio.pending")}: {counts.pending}</p>
+                  <p className="text-xs text-warning">
+                    {t("portfolio.pending")}: {counts.pending}
+                  </p>
                 )}
               </div>
             </div>

@@ -12,7 +12,8 @@ export type ProductRow = {
   currency: string;
   is_active: boolean;
   product_specifications?: { spec_key: string; spec_value: string; unit: string | null }[] | null;
-  stock_positions?: { warehouse: string; quantity: number | string; lead_time_days: number }[] | null;
+  stock_positions?:
+    { warehouse: string; quantity: number | string; lead_time_days: number }[] | null;
 };
 
 /** Maps a catalogue row (with joined specs/stock) onto the pure engine shape. */

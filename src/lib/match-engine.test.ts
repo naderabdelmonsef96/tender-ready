@@ -62,12 +62,17 @@ describe("extractMeasures", () => {
 
 describe("hard gates", () => {
   it("excludes a product whose unit family differs", () => {
-    expect(scoreProduct({ description: "Galvanised steel pipe", unit: "no", sectionPath: null }, pipe)).toBeNull();
+    expect(
+      scoreProduct({ description: "Galvanised steel pipe", unit: "no", sectionPath: null }, pipe),
+    ).toBeNull();
   });
 
   it("excludes a product whose stated specification contradicts the item", () => {
     expect(
-      scoreProduct({ description: "Galvanised steel pipe 150 mm", unit: "m", sectionPath: null }, pipe),
+      scoreProduct(
+        { description: "Galvanised steel pipe 150 mm", unit: "m", sectionPath: null },
+        pipe,
+      ),
     ).toBeNull();
   });
 
@@ -85,7 +90,11 @@ describe("hard gates", () => {
 describe("rankCandidates", () => {
   it("orders by score and never auto-confirms", () => {
     const ranked = rankCandidates(
-      { description: "Supply and install centrifugal water pump 5 HP Grundfos", unit: "no", sectionPath: null },
+      {
+        description: "Supply and install centrifugal water pump 5 HP Grundfos",
+        unit: "no",
+        sectionPath: null,
+      },
       [pump, pipe],
     );
     expect(ranked[0]?.productId).toBe("p1");
@@ -95,10 +104,10 @@ describe("rankCandidates", () => {
 
   it("returns nothing when no product is close enough", () => {
     expect(
-      rankCandidates({ description: "Site mobilisation and temporary fencing", unit: "lot", sectionPath: null }, [
-        pump,
-        pipe,
-      ]),
+      rankCandidates(
+        { description: "Site mobilisation and temporary fencing", unit: "lot", sectionPath: null },
+        [pump, pipe],
+      ),
     ).toEqual([]);
   });
 

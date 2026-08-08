@@ -450,7 +450,6 @@ export const en = {
     onlyAdmin: "Catalogue management is limited to org admins and product managers.",
   },
   demo: {
-
     label: "Demo role view",
     hint: "Changes this browser view only. The server still enforces your real role.",
   },
@@ -903,7 +902,6 @@ export const ar: typeof en = {
     onlyAdmin: "إدارة الكتالوج متاحة لمسؤول المؤسسة أو مدير المنتج.",
   },
   demo: {
-
     label: "عرض دور تجريبي",
     hint: "يغيّر هذا العرض في المتصفح فقط. الخادم يفرض دورك الحقيقي.",
   },

@@ -85,11 +85,7 @@ const UNIT_ALIASES: Record<string, string> = {
 /** Canonical unit family, or null when the unit is unknown/absent. */
 export function canonicalUnit(unit: string | null | undefined): string | null {
   if (!unit) return null;
-  const cleaned = unit
-    .toLowerCase()
-    .replace(/[.\s]/g, "")
-    .replace(/²/g, "2")
-    .replace(/³/g, "3");
+  const cleaned = unit.toLowerCase().replace(/[.\s]/g, "").replace(/²/g, "2").replace(/³/g, "3");
   if (!cleaned) return null;
   return UNIT_ALIASES[cleaned] ?? cleaned;
 }
@@ -259,7 +255,10 @@ export function scoreProduct(item: MatchItem, product: MatchProduct): MatchCandi
 
   const score = Math.min(
     1,
-    textScore * 0.55 + specScore * 0.25 + (brandHit ? 0.1 : 0) + (categoryHit ? 0.05 : 0) +
+    textScore * 0.55 +
+      specScore * 0.25 +
+      (brandHit ? 0.1 : 0) +
+      (categoryHit ? 0.05 : 0) +
       (codeHit ? 0.3 : 0),
   );
 

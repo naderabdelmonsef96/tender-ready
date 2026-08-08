@@ -446,7 +446,9 @@ export const decideStageApproval = createServerFn({ method: "POST" })
       .update({
         stage_state: data.decision,
         current_stage:
-          data.decision === "approved" ? (NEXT_STAGE[task.data.stage] ?? task.data.stage) : task.data.stage,
+          data.decision === "approved"
+            ? (NEXT_STAGE[task.data.stage] ?? task.data.stage)
+            : task.data.stage,
       })
       .eq("organization_id", data.organizationId)
       .eq("id", task.data.tender_id);
@@ -466,9 +468,7 @@ export const decideStageApproval = createServerFn({ method: "POST" })
 
 export const listCatalogueProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    orgTenderSchema.pick({ organizationId: true }).parse(input),
-  )
+  .inputValidator((input: unknown) => orgTenderSchema.pick({ organizationId: true }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const [products, catalogues, membership] = await Promise.all([
