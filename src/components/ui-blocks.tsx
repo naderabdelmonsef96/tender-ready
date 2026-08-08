@@ -11,8 +11,8 @@ export function PageHeader({
   actions,
 }: {
   title: string;
-  subtitle?: string;
-  actions?: ReactNode;
+  subtitle?: string | undefined;
+  actions?: ReactNode | undefined;
 }) {
   return (
     <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -33,11 +33,11 @@ export function Panel({
   bodyClassName,
   children,
 }: {
-  title?: string;
-  description?: string;
-  actions?: ReactNode;
-  className?: string;
-  bodyClassName?: string;
+  title?: string | undefined;
+  description?: string | undefined;
+  actions?: ReactNode | undefined;
+  className?: string | undefined;
+  bodyClassName?: string | undefined;
   children: ReactNode;
 }) {
   return (
@@ -66,7 +66,7 @@ export function StatCard({
 }: {
   label: string;
   value: string | number;
-  hint?: string;
+  hint?: string | undefined;
   tone?: "default" | "warning" | "success" | "info";
 }) {
   const toneClass = {
@@ -119,7 +119,7 @@ export function StageBadge({ stage }: { stage: TenderStage }) {
   );
 }
 
-export function EmptyState({ message, action }: { message: string; action?: ReactNode }) {
+export function EmptyState({ message, action }: { message: string; action?: ReactNode | undefined }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-6 py-10 text-center">
       <p className="max-w-md text-sm text-muted-foreground">{message}</p>
@@ -128,7 +128,7 @@ export function EmptyState({ message, action }: { message: string; action?: Reac
   );
 }
 
-export function ErrorState({ message, action }: { message: string; action?: ReactNode }) {
+export function ErrorState({ message, action }: { message: string; action?: ReactNode | undefined }) {
   return (
     <div
       role="alert"
