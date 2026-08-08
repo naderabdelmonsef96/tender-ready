@@ -193,7 +193,7 @@ export async function runExtraction(
         organization_id: job.organization_id,
         tender_id: job.tender_id,
         document_version_id: version.id,
-        boq_item_id: exception.itemKey ? itemIdByKey.get(exception.itemKey) ?? null : null,
+        boq_item_id: exception.itemKey ? (itemIdByKey.get(exception.itemKey) ?? null) : null,
         kind: exception.kind,
         message: exception.message,
         sheet_name: exception.sheetName,
@@ -206,7 +206,12 @@ export async function runExtraction(
 
   const partial = result.sheets.some((sheet) => sheet.kind === "unrecognised");
   return finish({
-    status: result.items.length === 0 && result.requirements.length === 0 ? "partial" : partial ? "partial" : "complete",
+    status:
+      result.items.length === 0 && result.requirements.length === 0
+        ? "partial"
+        : partial
+          ? "partial"
+          : "complete",
     sheets_found: result.sheets.length,
     rows_scanned: result.rowsScanned,
     items_created: result.items.length,

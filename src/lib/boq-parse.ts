@@ -82,9 +82,11 @@ export type ExtractionResult = {
 };
 
 const REQUIREMENT_SHEET = /spec|note|preamble|term|scope|condition|general|compliance|مواصف|شروط/i;
-const SUBTOTAL = /\b(sub\s*total|subtotal|total|carried\s+forward|brought\s+forward|summary)\b|الإجمالي|إجمالي/i;
+const SUBTOTAL =
+  /\b(sub\s*total|subtotal|total|carried\s+forward|brought\s+forward|summary)\b|الإجمالي|إجمالي/i;
 const RATE_ONLY = /rate\s*only|سعر\s*فقط/i;
-const CRITICAL = /\b(must|shall|mandatory|certif\w*|compl\w*|warrant\w*|safety|standard)\b|يجب|إلزامي/i;
+const CRITICAL =
+  /\b(must|shall|mandatory|certif\w*|compl\w*|warrant\w*|safety|standard)\b|يجب|إلزامي/i;
 
 const KNOWN_UNITS = new Set([
   "no",
@@ -141,7 +143,10 @@ export function cellText(value: CellValue): string {
 }
 
 export function normalizeText(value: string): string {
-  return value.replace(/\s+/g, " ").replace(/[\u200f\u200e]/g, "").trim();
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/[\u200f\u200e]/g, "")
+    .trim();
 }
 
 export function parseQuantity(value: CellValue): number | null {
@@ -162,11 +167,11 @@ export function normalizeUnit(value: CellValue): { unit: string | null; recognis
     "sq.m": "m2",
     sqm: "m2",
     "m²": "m2",
-    "m2": "m2",
+    m2: "m2",
     "cu.m": "m3",
     cum: "m3",
     "m³": "m3",
-    "m3": "m3",
+    m3: "m3",
     "l.m": "lm",
     lm: "lm",
     rm: "lm",
@@ -387,7 +392,9 @@ export function extractWorkbook(sheets: SheetInput[]): ExtractionResult {
               sheetName: sheet.name,
               rowIndex: r,
               cellRef:
-                header.quantity !== null ? cellRef(r, header.quantity) : cellRef(r, descriptionIndex),
+                header.quantity !== null
+                  ? cellRef(r, header.quantity)
+                  : cellRef(r, descriptionIndex),
               itemKey,
             });
           }

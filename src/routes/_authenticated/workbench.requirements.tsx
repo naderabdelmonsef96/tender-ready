@@ -31,7 +31,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -60,7 +66,8 @@ export const Route = createFileRoute("/_authenticated/workbench/requirements")({
       { property: "og:title", content: "BOQ & requirements register — TenderReady" },
       {
         property: "og:description",
-        content: "Source-linked requirements register with technical review and maker-checker gates.",
+        content:
+          "Source-linked requirements register with technical review and maker-checker gates.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -186,9 +193,12 @@ function Page() {
   const openExceptions = (data?.exceptions ?? []).filter((entry) => entry.status === "open");
 
   const canEditRegister =
-    data?.myRole === "org_admin" || data?.myRole === "proposal_engineer" || data?.myRole === "technical_lead";
+    data?.myRole === "org_admin" ||
+    data?.myRole === "proposal_engineer" ||
+    data?.myRole === "technical_lead";
   const isReviewer =
-    data?.myRole === "org_admin" || data?.myRole === (data?.technicalStage?.approver_role ?? "technical_lead");
+    data?.myRole === "org_admin" ||
+    data?.myRole === (data?.technicalStage?.approver_role ?? "technical_lead");
   const activeTask = data?.activeTask ?? null;
   const selfSubmitted = activeTask?.submitted_by === data?.userId;
 
@@ -266,7 +276,9 @@ function Page() {
             action={
               <Button
                 variant="outline"
-                onClick={() => void navigate({ to: "/workbench/intake", search: { tender: tenderId } })}
+                onClick={() =>
+                  void navigate({ to: "/workbench/intake", search: { tender: tenderId } })
+                }
               >
                 {t("screens.intake")}
               </Button>
@@ -400,14 +412,30 @@ function Page() {
                     <thead>
                       <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                         <th scope="col" className="w-8 px-2 py-2" />
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.code")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.description")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.section")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.unit")}</th>
-                        <th scope="col" className="px-2 py-2 text-end">{t("register.quantity")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.confidence")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("common.status")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.evidence")}</th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.code")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.description")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.section")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.unit")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-end">
+                          {t("register.quantity")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.confidence")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("common.status")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.evidence")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -497,12 +525,18 @@ function Page() {
                   <table className="w-full border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.category")}</th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.category")}
+                        </th>
                         <th scope="col" className="px-2 py-2 text-start">
                           {t("register.requirementText")}
                         </th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("common.status")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.evidence")}</th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("common.status")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.evidence")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -518,7 +552,9 @@ function Page() {
                                 : requirement.text}
                             </span>
                           </td>
-                          <td className="px-2 py-2 text-xs">{t(`itemStatus.${requirement.status}`)}</td>
+                          <td className="px-2 py-2 text-xs">
+                            {t(`itemStatus.${requirement.status}`)}
+                          </td>
                           <td className="px-2 py-2">
                             <Button
                               size="sm"
@@ -551,14 +587,24 @@ function Page() {
                   <table className="w-full border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.exceptionKind")}</th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.exceptionKind")}
+                        </th>
                         <th scope="col" className="px-2 py-2 text-start">
                           {t("register.exceptionMessage")}
                         </th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.sheet")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("register.cell")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("common.status")}</th>
-                        <th scope="col" className="px-2 py-2 text-start">{t("common.actions")}</th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.sheet")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("register.cell")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("common.status")}
+                        </th>
+                        <th scope="col" className="px-2 py-2 text-start">
+                          {t("common.actions")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -610,7 +656,9 @@ function Page() {
                                   variant="ghost"
                                   disabled={exceptionMutation.isPending}
                                   onClick={() => {
-                                    const reason = window.prompt(t("register.resolutionNote") ?? "");
+                                    const reason = window.prompt(
+                                      t("register.resolutionNote") ?? "",
+                                    );
                                     if (!reason) return;
                                     exceptionMutation.mutate({
                                       data: {
@@ -731,7 +779,9 @@ function Page() {
                   [t("register.normalizedText"), evidence.ref.normalized_text ?? "—"],
                 ].map(([label, value]) => (
                   <div key={label} className="min-w-0">
-                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {label}
+                    </dt>
                     <dd className="mt-0.5 break-words">{value}</dd>
                   </div>
                 ))}
@@ -767,10 +817,7 @@ function Page() {
                     quantity: quantity ? Number(quantity) : null,
                     sectionPath: String(form.get("sectionPath") ?? "") || null,
                     status: form.get("status") as
-                      | "needs_review"
-                      | "reviewed"
-                      | "exception"
-                      | "excluded",
+                      "needs_review" | "reviewed" | "exception" | "excluded",
                     notes: String(form.get("notes") ?? "") || null,
                   },
                 });
@@ -801,7 +848,12 @@ function Page() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="edit-unit">{t("register.unit")}</Label>
-                  <Input id="edit-unit" name="unit" defaultValue={editing.unit ?? ""} className="mt-1" />
+                  <Input
+                    id="edit-unit"
+                    name="unit"
+                    defaultValue={editing.unit ?? ""}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-quantity">{t("register.quantity")}</Label>
@@ -833,11 +885,13 @@ function Page() {
                   defaultValue={editing.status}
                   className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
                 >
-                  {(["needs_review", "reviewed", "exception", "excluded"] as const).map((status) => (
-                    <option key={status} value={status}>
-                      {t(`itemStatus.${status}`)}
-                    </option>
-                  ))}
+                  {(["needs_review", "reviewed", "exception", "excluded"] as const).map(
+                    (status) => (
+                      <option key={status} value={status}>
+                        {t(`itemStatus.${status}`)}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
               <div>

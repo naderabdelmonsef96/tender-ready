@@ -99,7 +99,9 @@ function Page() {
   const intakeQuery = useQuery({
     queryKey: ["intake", activeOrganizationId, tenderId],
     queryFn: () =>
-      fetchIntake({ data: { organizationId: activeOrganizationId ?? "", tenderId: tenderId ?? "" } }),
+      fetchIntake({
+        data: { organizationId: activeOrganizationId ?? "", tenderId: tenderId ?? "" },
+      }),
     enabled: Boolean(activeOrganizationId && tenderId),
     refetchInterval: (query) => {
       const jobs = query.state.data?.jobs ?? [];
@@ -204,7 +206,9 @@ function Page() {
   async function onDownload(storagePath: string) {
     if (!activeOrganizationId) return;
     try {
-      const { url } = await signUrl({ data: { organizationId: activeOrganizationId, storagePath } });
+      const { url } = await signUrl({
+        data: { organizationId: activeOrganizationId, storagePath },
+      });
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("common.unexpectedError"));
@@ -212,7 +216,8 @@ function Page() {
   }
 
   const intake = intakeQuery.data;
-  const jobFor = (versionId: string) => intake?.jobs.find((job) => job.document_version_id === versionId);
+  const jobFor = (versionId: string) =>
+    intake?.jobs.find((job) => job.document_version_id === versionId);
   const ingestedCount = (intake?.jobs ?? []).filter(
     (job) => job.status === "complete" || job.status === "partial",
   ).length;
@@ -267,7 +272,8 @@ function Page() {
               >
                 {(listQuery.data?.tenders ?? []).map((tender) => (
                   <option key={tender.id} value={tender.id}>
-                    {tender.reference} — {language === "ar" && tender.title_ar ? tender.title_ar : tender.title}
+                    {tender.reference} —{" "}
+                    {language === "ar" && tender.title_ar ? tender.title_ar : tender.title}
                   </option>
                 ))}
               </select>
@@ -418,9 +424,15 @@ function Page() {
               {checklist.map((entry) => (
                 <li key={entry.label} className="flex items-start gap-2 text-sm">
                   {entry.done ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                    <CheckCircle2
+                      className="mt-0.5 h-4 w-4 shrink-0 text-success"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <Circle
+                      className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   )}
                   <span className={entry.done ? "text-foreground" : "text-muted-foreground"}>
                     {entry.label}
@@ -486,13 +498,27 @@ function Page() {
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-border text-start text-xs uppercase tracking-wide text-muted-foreground">
-                      <th scope="col" className="px-2 py-2 text-start">{t("intake.fileName")}</th>
-                      <th scope="col" className="px-2 py-2 text-start">{t("intake.version")}</th>
-                      <th scope="col" className="px-2 py-2 text-start">{t("intake.size")}</th>
-                      <th scope="col" className="px-2 py-2 text-start">{t("intake.hash")}</th>
-                      <th scope="col" className="px-2 py-2 text-start">{t("intake.uploadedAt")}</th>
-                      <th scope="col" className="px-2 py-2 text-start">{t("intake.ingestion")}</th>
-                      <th scope="col" className="px-2 py-2 text-start">{t("common.actions")}</th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("intake.fileName")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("intake.version")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("intake.size")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("intake.hash")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("intake.uploadedAt")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("intake.ingestion")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("common.actions")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

@@ -17,7 +17,9 @@ import {
 
 export const listIntakeTenders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => createTenderSchema.pick({ organizationId: true }).parse(input))
+  .inputValidator((input: unknown) =>
+    createTenderSchema.pick({ organizationId: true }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const [tenders, clients, settings] = await Promise.all([
       context.supabase
@@ -495,7 +497,8 @@ export const updateBoqItem = createServerFn({ method: "POST" })
         ...next,
         version: current.data.version + 1,
         reviewed_by: next.status === "reviewed" ? userId : current.data.reviewed_by,
-        reviewed_at: next.status === "reviewed" ? new Date().toISOString() : current.data.reviewed_at,
+        reviewed_at:
+          next.status === "reviewed" ? new Date().toISOString() : current.data.reviewed_at,
       })
       .eq("id", data.itemId)
       .eq("version", data.version)
@@ -570,7 +573,11 @@ export const bulkUpdateBoqItems = createServerFn({ method: "POST" })
     if (ids.length > 0) {
       const patch =
         data.action === "mark_reviewed"
-          ? { status: "reviewed" as const, reviewed_by: userId, reviewed_at: new Date().toISOString() }
+          ? {
+              status: "reviewed" as const,
+              reviewed_by: userId,
+              reviewed_at: new Date().toISOString(),
+            }
           : data.action === "exclude"
             ? { status: "excluded" as const, exclusion_reason: data.reason ?? null }
             : { section_path: data.sectionPath ?? null };
@@ -725,8 +732,7 @@ export const submitTechnicalReview = createServerFn({ method: "POST" })
       throw new Error("There is nothing to submit yet — ingest a tender file first.");
     }
     const missingEvidence = rows.filter(
-      (row) =>
-        row.criticality === "critical" && !row.source_reference_id && !row.override_reason,
+      (row) => row.criticality === "critical" && !row.source_reference_id && !row.override_reason,
     );
     if (missingEvidence.length > 0) {
       throw new Error(
@@ -789,7 +795,9 @@ export const decideTechnicalReview = createServerFn({ method: "POST" })
     if (task.error) throw new Error(task.error.message);
     if (!task.data) throw new Error("Approval task not found");
     if (task.data.submitted_by === userId) {
-      throw new Error("You submitted this register — maker-checker separation blocks self-approval.");
+      throw new Error(
+        "You submitted this register — maker-checker separation blocks self-approval.",
+      );
     }
 
     const updated = await supabase

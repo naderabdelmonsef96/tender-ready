@@ -245,7 +245,8 @@ export const en = {
     estimatedValue: "Estimated value",
     notes: "Internal notes",
     files: "Tender files",
-    filesHint: "Spreadsheets are ingested now. Other formats are stored safely and wait for the document integration.",
+    filesHint:
+      "Spreadsheets are ingested now. Other formats are stored safely and wait for the document integration.",
     upload: "Upload file",
     uploading: "Uploading…",
     replace: "Replace",
@@ -274,7 +275,8 @@ export const en = {
     exceptionsFound: "Exceptions",
     integrationRequired: "Document integration required",
     noTenderSelected: "Select a tender above, or register a new one, to manage its files.",
-    onlyMakers: "Only an organization admin or proposal engineer can register tenders and upload files.",
+    onlyMakers:
+      "Only an organization admin or proposal engineer can register tenders and upload files.",
   },
   jobStatus: {
     none: "Not ingested",
@@ -334,7 +336,8 @@ export const en = {
     critical: "Critical",
     standard: "Standard",
     invalidated: "{{count}} downstream approval(s) were invalidated by this edit.",
-    blockedWithoutEvidence: "{{count}} critical item(s) were skipped: they need a source reference or a named override.",
+    blockedWithoutEvidence:
+      "{{count}} critical item(s) were skipped: they need a source reference or a named override.",
     category: "Category",
     requirementText: "Requirement",
     editItem: "Edit item",
@@ -354,7 +357,6 @@ export const en = {
     overridden: "Overridden",
   },
   demo: {
-
     label: "Demo role view",
     hint: "Changes this browser view only. The server still enforces your real role.",
   },
@@ -606,7 +608,8 @@ export const ar: typeof en = {
     estimatedValue: "القيمة التقديرية",
     notes: "ملاحظات داخلية",
     files: "ملفات العطاء",
-    filesHint: "تُستخرج جداول البيانات الآن. الصيغ الأخرى تُخزَّن بأمان وتنتظر تكامل قراءة المستندات.",
+    filesHint:
+      "تُستخرج جداول البيانات الآن. الصيغ الأخرى تُخزَّن بأمان وتنتظر تكامل قراءة المستندات.",
     upload: "رفع ملف",
     uploading: "جارٍ الرفع…",
     replace: "استبدال",
@@ -715,7 +718,6 @@ export const ar: typeof en = {
     overridden: "مُتجاوَز",
   },
   demo: {
-
     label: "عرض دور تجريبي",
     hint: "يغيّر هذا العرض في المتصفح فقط. الخادم يفرض دورك الحقيقي.",
   },
