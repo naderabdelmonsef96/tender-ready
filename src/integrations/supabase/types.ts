@@ -338,10 +338,13 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          incoterm: string | null
           is_active: boolean
+          landing_cost: number | null
           name: string
           name_ar: string | null
           organization_id: string
+          supplier_code: string | null
           unit: string | null
           updated_at: string
         }
@@ -356,10 +359,13 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          incoterm?: string | null
           is_active?: boolean
+          landing_cost?: number | null
           name: string
           name_ar?: string | null
           organization_id: string
+          supplier_code?: string | null
           unit?: string | null
           updated_at?: string
         }
@@ -374,10 +380,13 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          incoterm?: string | null
           is_active?: boolean
+          landing_cost?: number | null
           name?: string
           name_ar?: string | null
           organization_id?: string
+          supplier_code?: string | null
           unit?: string | null
           updated_at?: string
         }
