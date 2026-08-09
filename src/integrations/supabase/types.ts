@@ -326,6 +326,100 @@ export type Database = {
           },
         ]
       }
+      catalogue_import_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          failed_rows: number
+          file_name: string | null
+          id: string
+          imported_rows: number
+          organization_id: string
+          status: string
+          storage_path: string | null
+          total_rows: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          failed_rows?: number
+          file_name?: string | null
+          id?: string
+          imported_rows?: number
+          organization_id: string
+          status?: string
+          storage_path?: string | null
+          total_rows?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          failed_rows?: number
+          file_name?: string | null
+          id?: string
+          imported_rows?: number
+          organization_id?: string
+          status?: string
+          storage_path?: string | null
+          total_rows?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_import_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogue_import_rows: {
+        Row: {
+          batch_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          mapped_data: Json | null
+          raw_data: Json | null
+          row_number: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          mapped_data?: Json | null
+          raw_data?: Json | null
+          row_number?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          mapped_data?: Json | null
+          raw_data?: Json | null
+          row_number?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_import_rows_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogue_products: {
         Row: {
           base_cost: number | null
