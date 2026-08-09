@@ -326,22 +326,184 @@ export type Database = {
           },
         ]
       }
+      catalogue_import_batches: {
+        Row: {
+          catalogue_id: string
+          committed_count: number
+          created_at: string
+          file_name: string
+          id: string
+          kind: string
+          mime_type: string | null
+          organization_id: string
+          row_count: number
+          status: string
+          status_message: string | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          catalogue_id: string
+          committed_count?: number
+          created_at?: string
+          file_name: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          organization_id: string
+          row_count?: number
+          status?: string
+          status_message?: string | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          catalogue_id?: string
+          committed_count?: number
+          created_at?: string
+          file_name?: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          organization_id?: string
+          row_count?: number
+          status?: string
+          status_message?: string | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_import_batches_catalogue_id_fkey"
+            columns: ["catalogue_id"]
+            isOneToOne: false
+            referencedRelation: "catalogues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_import_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogue_import_rows: {
+        Row: {
+          brand: string | null
+          category: string | null
+          confidence: number
+          created_at: string
+          currency: string | null
+          id: string
+          import_batch_id: string
+          incoterm: string | null
+          issue: string | null
+          matched_product_id: string | null
+          name: string | null
+          name_ar: string | null
+          organization_id: string
+          page_number: number | null
+          price: number | null
+          row_index: number
+          sheet_name: string | null
+          status: string
+          supplier_code: string | null
+          unit: string | null
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          confidence?: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          import_batch_id: string
+          incoterm?: string | null
+          issue?: string | null
+          matched_product_id?: string | null
+          name?: string | null
+          name_ar?: string | null
+          organization_id: string
+          page_number?: number | null
+          price?: number | null
+          row_index: number
+          sheet_name?: string | null
+          status?: string
+          supplier_code?: string | null
+          unit?: string | null
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          confidence?: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          import_batch_id?: string
+          incoterm?: string | null
+          issue?: string | null
+          matched_product_id?: string | null
+          name?: string | null
+          name_ar?: string | null
+          organization_id?: string
+          page_number?: number | null
+          price?: number | null
+          row_index?: number
+          sheet_name?: string | null
+          status?: string
+          supplier_code?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_import_rows_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_import_rows_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_import_rows_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogue_products: {
         Row: {
           base_cost: number | null
           brand: string | null
           catalogue_id: string
           category: string | null
-          code: string
+          code: string | null
           created_at: string
           created_by: string | null
           currency: string
           description: string | null
           id: string
+          incoterm: string | null
           is_active: boolean
+          landing_cost: number | null
+          landing_cost_currency: string | null
+          landing_cost_updated_at: string | null
           name: string
           name_ar: string | null
           organization_id: string
+          supplier_code: string
           unit: string | null
           updated_at: string
         }
@@ -350,16 +512,21 @@ export type Database = {
           brand?: string | null
           catalogue_id: string
           category?: string | null
-          code: string
+          code?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
           id?: string
+          incoterm?: string | null
           is_active?: boolean
+          landing_cost?: number | null
+          landing_cost_currency?: string | null
+          landing_cost_updated_at?: string | null
           name: string
           name_ar?: string | null
           organization_id: string
+          supplier_code: string
           unit?: string | null
           updated_at?: string
         }
@@ -368,16 +535,21 @@ export type Database = {
           brand?: string | null
           catalogue_id?: string
           category?: string | null
-          code?: string
+          code?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
           id?: string
+          incoterm?: string | null
           is_active?: boolean
+          landing_cost?: number | null
+          landing_cost_currency?: string | null
+          landing_cost_updated_at?: string | null
           name?: string
           name_ar?: string | null
           organization_id?: string
+          supplier_code?: string
           unit?: string | null
           updated_at?: string
         }

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useAppTranslation } from "@/components/language-provider";
@@ -24,11 +24,23 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  commitCatalogueImportRows,
+  discardCatalogueImportBatch,
+  getCatalogueImportRows,
+  listCatalogueImportBatches,
+  registerCatalogueImportFile,
+  startCatalogueImportExtraction,
+} from "@/lib/catalogue-import.functions";
+import { formatMoney } from "@/lib/format";
 import {
   deleteCatalogueProduct,
   listCatalogueProducts,
   upsertCatalogueProduct,
 } from "@/lib/portfolio.functions";
+
+const IMPORT_ACCEPT = ".xlsx,.xlsm,.xls,.csv,.pdf,.docx,.png,.jpg,.jpeg,.webp";
 
 export const Route = createFileRoute("/_authenticated/settings/catalogue")({
   head: () => ({
@@ -58,12 +70,17 @@ type Product = CatalogueData["products"][number];
 type FormState = {
   productId: string | null;
   code: string;
+  supplierCode: string;
   name: string;
   nameAr: string;
   unit: string;
   brand: string;
   category: string;
   baseCost: string;
+  currency: string;
+  incoterm: string;
+  landingCost: string;
+  isActive: boolean;
   stockQuantity: string;
   leadTimeDays: string;
   specs: { key: string; value: string; unit: string }[];
@@ -72,16 +89,23 @@ type FormState = {
 const emptyForm: FormState = {
   productId: null,
   code: "",
+  supplierCode: "",
   name: "",
   nameAr: "",
   unit: "",
   brand: "",
   category: "",
   baseCost: "",
+  currency: "EGP",
+  incoterm: "",
+  landingCost: "",
+  isActive: true,
   stockQuantity: "",
   leadTimeDays: "",
   specs: [{ key: "", value: "", unit: "" }],
 };
+
+type StatusFilter = "all" | "active" | "inactive";
 
 function Page() {
   const { t, language } = useAppTranslation();
@@ -93,6 +117,20 @@ function Page() {
   const deactivate = useServerFn(deleteCatalogueProduct);
 
   const [form, setForm] = useState<FormState | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
+
+  const registerImport = useServerFn(registerCatalogueImportFile);
+  const startExtraction = useServerFn(startCatalogueImportExtraction);
+  const commitRows = useServerFn(commitCatalogueImportRows);
+  const discardBatch = useServerFn(discardCatalogueImportBatch);
+  const fetchBatches = useServerFn(listCatalogueImportBatches);
+  const fetchImportRows = useServerFn(getCatalogueImportRows);
+
+  const importFileInput = useRef<HTMLInputElement | null>(null);
+  const [uploadingImport, setUploadingImport] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
 
   const query = useQuery({
     queryKey: ["catalogue", activeOrganizationId],
@@ -123,16 +161,114 @@ function Page() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const batchesQuery = useQuery({
+    queryKey: ["catalogue-imports", activeOrganizationId],
+    queryFn: () => fetchBatches({ data: { organizationId: activeOrganizationId ?? "" } }),
+    enabled: Boolean(activeOrganizationId) && canManage,
+    refetchInterval: (query) =>
+      (query.state.data?.batches ?? []).some((batch) => batch.status === "parsing") ? 2000 : false,
+  });
+
+  const rowsQuery = useQuery({
+    queryKey: ["catalogue-import-rows", selectedBatchId],
+    queryFn: () =>
+      fetchImportRows({
+        data: { organizationId: activeOrganizationId ?? "", importBatchId: selectedBatchId ?? "" },
+      }),
+    enabled: Boolean(activeOrganizationId && selectedBatchId),
+  });
+
+  const commitMutation = useMutation({
+    mutationFn: commitRows,
+    onSuccess: (result) => {
+      toast.success(`${result.committed} ${t("catalogueImport.committedToast")}`);
+      setSelectedRowIds(new Set());
+      void queryClient.invalidateQueries({ queryKey: ["catalogue-import-rows"] });
+      void queryClient.invalidateQueries({ queryKey: ["catalogue-imports"] });
+      void queryClient.invalidateQueries({ queryKey: ["catalogue"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const discardMutation = useMutation({
+    mutationFn: discardBatch,
+    onSuccess: () => {
+      toast.success(t("catalogueImport.discarded"));
+      if (selectedBatchId) setSelectedBatchId(null);
+      void queryClient.invalidateQueries({ queryKey: ["catalogue-imports"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  async function uploadImportFile(file: File) {
+    if (!activeOrganizationId) return;
+    const safeName = file.name.replace(/[^\w.\-؀-ۿ]+/g, "_");
+    const path = `${activeOrganizationId}/${crypto.randomUUID()}-${safeName}`;
+    const upload = await supabase.storage.from("catalogue-files").upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+    });
+    if (upload.error) throw new Error(upload.error.message);
+
+    const registered = await registerImport({
+      data: {
+        organizationId: activeOrganizationId,
+        storagePath: path,
+        originalName: file.name,
+        mimeType: file.type || null,
+        byteSize: file.size,
+      },
+    });
+    await startExtraction({
+      data: { organizationId: activeOrganizationId, importBatchId: registered.importBatchId },
+    });
+    setSelectedBatchId(registered.importBatchId);
+  }
+
+  async function onImportFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    setUploadingImport(true);
+    try {
+      for (const file of list) {
+        try {
+          await uploadImportFile(file);
+        } catch (error) {
+          toast.error(
+            `${file.name}: ${error instanceof Error ? error.message : t("common.unexpectedError")}`,
+          );
+        }
+      }
+      void queryClient.invalidateQueries({ queryKey: ["catalogue-imports"] });
+    } finally {
+      setUploadingImport(false);
+      if (importFileInput.current) importFileInput.current.value = "";
+    }
+  }
+
+  function toggleRowSelected(rowId: string) {
+    setSelectedRowIds((current) => {
+      const next = new Set(current);
+      if (next.has(rowId)) next.delete(rowId);
+      else next.add(rowId);
+      return next;
+    });
+  }
+
   function openEdit(product: Product) {
     setForm({
       productId: product.id,
-      code: product.code,
+      code: product.code ?? "",
+      supplierCode: product.supplier_code,
       name: product.name,
       nameAr: product.name_ar ?? "",
       unit: product.unit ?? "",
       brand: product.brand ?? "",
       category: product.category ?? "",
       baseCost: product.base_cost === null ? "" : String(product.base_cost),
+      currency: product.currency,
+      incoterm: product.incoterm ?? "",
+      landingCost: product.landing_cost === null ? "" : String(product.landing_cost),
+      isActive: product.is_active,
       stockQuantity: String(product.stock_positions?.[0]?.quantity ?? ""),
       leadTimeDays: String(product.stock_positions?.[0]?.lead_time_days ?? ""),
       specs:
@@ -153,15 +289,18 @@ function Page() {
       data: {
         organizationId: activeOrganizationId ?? "",
         productId: form.productId,
-        code: form.code.trim(),
+        code: form.code.trim() || null,
+        supplierCode: form.supplierCode.trim(),
         name: form.name.trim(),
         nameAr: form.nameAr.trim() || null,
         unit: form.unit.trim() || null,
         brand: form.brand.trim() || null,
         category: form.category.trim() || null,
         baseCost: numeric(form.baseCost),
-        currency: "EGP",
-        isActive: true,
+        currency: form.currency.trim().toUpperCase() || "EGP",
+        incoterm: form.incoterm.trim() || null,
+        landingCost: numeric(form.landingCost),
+        isActive: form.isActive,
         stockQuantity: numeric(form.stockQuantity),
         leadTimeDays: numeric(form.leadTimeDays),
         specs: form.specs
@@ -174,6 +313,37 @@ function Page() {
       },
     });
   }
+
+  function toggleActive(product: Product) {
+    saveMutation.mutate({
+      data: {
+        organizationId: activeOrganizationId ?? "",
+        productId: product.id,
+        code: product.code ?? null,
+        supplierCode: product.supplier_code,
+        name: product.name,
+        nameAr: product.name_ar ?? null,
+        unit: product.unit ?? null,
+        brand: product.brand ?? null,
+        category: product.category ?? null,
+        baseCost: product.base_cost === null ? null : Number(product.base_cost),
+        currency: product.currency,
+        incoterm: product.incoterm ?? null,
+        landingCost: product.landing_cost === null ? null : Number(product.landing_cost),
+        isActive: !product.is_active,
+      },
+    });
+  }
+
+  const filteredProducts = (query.data?.products ?? []).filter((product) => {
+    if (statusFilter === "active" && !product.is_active) return false;
+    if (statusFilter === "inactive" && product.is_active) return false;
+    const needle = search.trim().toLowerCase();
+    if (!needle) return true;
+    return [product.code, product.supplier_code, product.name, product.name_ar, product.brand]
+      .filter(Boolean)
+      .some((field) => field!.toLowerCase().includes(needle));
+  });
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
@@ -202,99 +372,397 @@ function Page() {
         ) : (query.data?.products.length ?? 0) === 0 ? (
           <EmptyState message={t("catalogue.empty")} />
         ) : (
-          <TableScroll>
-            <table className="w-full border-collapse text-sm">
-              <caption className="sr-only">{t("catalogue.title")}</caption>
-              <thead>
-                <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                  <th scope="col" className="px-2 py-2 text-start">
-                    {t("catalogue.code")}
-                  </th>
-                  <th scope="col" className="px-2 py-2 text-start">
-                    {t("catalogue.name")}
-                  </th>
-                  <th scope="col" className="px-2 py-2 text-start">
-                    {t("catalogue.unit")}
-                  </th>
-                  <th scope="col" className="px-2 py-2 text-start">
-                    {t("catalogue.specs")}
-                  </th>
-                  <th scope="col" className="px-2 py-2 text-start">
-                    {t("portfolio.stock")}
-                  </th>
-                  <th scope="col" className="px-2 py-2 text-start">
-                    {t("common.actions")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {(query.data?.products ?? []).map((product) => (
-                  <tr key={product.id} className="border-b border-border/70 align-top">
-                    <td className="whitespace-nowrap px-2 py-2 font-medium">{product.code}</td>
-                    <td className="max-w-[20rem] px-2 py-2">
-                      <p className="break-words">
-                        {language === "ar" && product.name_ar ? product.name_ar : product.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {[product.brand, product.category].filter(Boolean).join(" · ") || "—"}
-                        {!product.is_active && (
-                          <span className="ms-2 rounded bg-muted px-1.5 py-0.5 text-[11px]">
-                            {t("catalogue.inactive")}
-                          </span>
-                        )}
-                      </p>
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-2 text-muted-foreground">
-                      {product.unit ?? "—"}
-                    </td>
-                    <td className="max-w-[18rem] px-2 py-2 text-xs text-muted-foreground">
-                      {(product.product_specifications ?? [])
-                        .map((spec) => `${spec.spec_key}: ${spec.spec_value}${spec.unit ?? ""}`)
-                        .join(", ") || "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-2 tabular-nums">
-                      {product.stock_positions?.[0]?.quantity ?? 0}
-                    </td>
-                    <td className="px-2 py-2">
-                      {canManage ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button size="sm" variant="outline" onClick={() => openEdit(product)}>
-                            {t("common.save").replace("…", "")}
-                          </Button>
-                          {product.is_active && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              disabled={deleteMutation.isPending}
-                              onClick={() =>
-                                deleteMutation.mutate({
-                                  data: {
-                                    organizationId: activeOrganizationId ?? "",
-                                    productId: product.id,
-                                  },
-                                })
-                              }
-                            >
-                              {t("catalogue.deactivate")}
-                            </Button>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {t("common.readOnly")}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+          <>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Input
+                aria-label={t("catalogue.search")}
+                placeholder={t("catalogue.search")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="sm:max-w-xs"
+              />
+              <div className="flex gap-1 rounded-lg bg-muted p-1">
+                {(["all", "active", "inactive"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setStatusFilter(option)}
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                      statusFilter === option
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {t(
+                      `catalogue.filter${option === "all" ? "All" : option === "active" ? "Active" : "Inactive"}`,
+                    )}
+                  </button>
                 ))}
-              </tbody>
-            </table>
-          </TableScroll>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {filteredProducts.length} / {query.data?.products.length ?? 0}
+              </span>
+            </div>
+            {filteredProducts.length === 0 ? (
+              <EmptyState message={t("catalogue.empty")} />
+            ) : (
+              <TableScroll>
+                <table className="w-full border-collapse text-sm">
+                  <caption className="sr-only">{t("catalogue.title")}</caption>
+                  <thead>
+                    <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.icode")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.supplierCode")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.name")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.unit")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.baseCost")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.landingCost")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("portfolio.stock")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("catalogue.active")}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-start">
+                        {t("common.actions")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map((product) => {
+                      const stock = product.stock_positions?.[0]?.quantity ?? 0;
+                      return (
+                        <tr key={product.id} className="border-b border-border/70 align-top">
+                          <td className="whitespace-nowrap px-2 py-2 font-medium">
+                            {product.code ?? (
+                              <span className="text-muted-foreground">
+                                {t("catalogue.notEnlisted")}
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">
+                            {product.supplier_code}
+                          </td>
+                          <td className="max-w-[18rem] px-2 py-2">
+                            <p className="break-words">
+                              {language === "ar" && product.name_ar
+                                ? product.name_ar
+                                : product.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {[product.brand, product.category].filter(Boolean).join(" · ") || "—"}
+                            </p>
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-muted-foreground">
+                            {product.unit ?? "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 tabular-nums" dir="ltr">
+                            {product.base_cost === null
+                              ? "—"
+                              : formatMoney(product.base_cost, product.currency, language)}
+                            {product.incoterm && (
+                              <span className="ms-1 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                                {product.incoterm}
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 tabular-nums" dir="ltr">
+                            {stock > 0 && product.landing_cost !== null ? (
+                              formatMoney(
+                                product.landing_cost,
+                                product.landing_cost_currency ?? product.currency,
+                                language,
+                              )
+                            ) : (
+                              <span className="text-muted-foreground">
+                                {t("catalogue.notStocked")}
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 tabular-nums">{stock}</td>
+                          <td className="px-2 py-2">
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[11px] ${
+                                product.is_active
+                                  ? "bg-success/10 text-success"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {product.is_active ? t("catalogue.active") : t("catalogue.inactive")}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2">
+                            {canManage ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openEdit(product)}
+                                >
+                                  {t("common.save").replace("…", "")}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={saveMutation.isPending || deleteMutation.isPending}
+                                  onClick={() =>
+                                    product.is_active
+                                      ? deleteMutation.mutate({
+                                          data: {
+                                            organizationId: activeOrganizationId ?? "",
+                                            productId: product.id,
+                                          },
+                                        })
+                                      : toggleActive(product)
+                                  }
+                                >
+                                  {product.is_active
+                                    ? t("catalogue.deactivate")
+                                    : t("catalogue.activate")}
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {t("common.readOnly")}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </TableScroll>
+            )}
+          </>
         )}
         {!canManage && (
           <p className="mt-3 text-xs text-muted-foreground">{t("catalogue.onlyAdmin")}</p>
         )}
       </Panel>
+
+      {canManage && (
+        <Panel title={t("catalogueImport.title")} className="mt-4">
+          <p className="mb-3 text-xs text-muted-foreground">{t("catalogueImport.subtitle")}</p>
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              ref={importFileInput}
+              type="file"
+              accept={IMPORT_ACCEPT}
+              multiple
+              className="hidden"
+              onChange={(event) => event.target.files && void onImportFiles(event.target.files)}
+            />
+            <Button onClick={() => importFileInput.current?.click()} disabled={uploadingImport}>
+              {uploadingImport ? t("catalogueImport.uploading") : t("catalogueImport.upload")}
+            </Button>
+          </div>
+
+          {batchesQuery.isPending ? (
+            <LoadingRows rows={2} />
+          ) : (batchesQuery.data?.batches.length ?? 0) === 0 ? (
+            <EmptyState message={t("catalogueImport.noBatches")} />
+          ) : (
+            <div className="space-y-2">
+              {(batchesQuery.data?.batches ?? []).map((batch) => {
+                const statusKey =
+                  batch.status === "uploaded"
+                    ? "statusUploaded"
+                    : batch.status === "parsing"
+                      ? "statusParsing"
+                      : batch.status === "parsed"
+                        ? "statusParsed"
+                        : batch.status === "partial"
+                          ? "statusPartial"
+                          : batch.status === "integration_required"
+                            ? "statusIntegrationRequired"
+                            : "statusFailed";
+                return (
+                  <div
+                    key={batch.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{batch.file_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t(`catalogueImport.${statusKey}`)}
+                        {batch.row_count > 0 &&
+                          ` · ${batch.row_count} ${t("catalogueImport.rows")}`}
+                        {batch.committed_count > 0 &&
+                          ` · ${batch.committed_count} ${t("catalogueImport.committedCount")}`}
+                        {batch.status_message && ` · ${batch.status_message}`}
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {(batch.status === "parsed" || batch.status === "partial") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedBatchId(batch.id)}
+                        >
+                          {t("catalogueImport.review")}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={discardMutation.isPending}
+                        onClick={() =>
+                          discardMutation.mutate({
+                            data: {
+                              organizationId: activeOrganizationId ?? "",
+                              importBatchId: batch.id,
+                            },
+                          })
+                        }
+                      >
+                        {t("catalogueImport.discard")}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      )}
+
+      <Dialog
+        open={Boolean(selectedBatchId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedBatchId(null);
+            setSelectedRowIds(new Set());
+          }
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{t("catalogueImport.review")}</DialogTitle>
+          </DialogHeader>
+          {rowsQuery.isPending ? (
+            <LoadingRows rows={5} />
+          ) : (
+            (() => {
+              const importRows = rowsQuery.data?.rows ?? [];
+              const pendingRowIds = importRows
+                .filter((row) => row.status === "pending")
+                .map((row) => row.id);
+              return (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">{t("catalogueImport.commitHint")}</p>
+                  <TableScroll>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="px-2 py-2 text-start">
+                            <input
+                              type="checkbox"
+                              aria-label={t("catalogueImport.selectAll")}
+                              checked={
+                                pendingRowIds.length > 0 &&
+                                pendingRowIds.every((id) => selectedRowIds.has(id))
+                              }
+                              onChange={(event) =>
+                                setSelectedRowIds(
+                                  event.target.checked ? new Set(pendingRowIds) : new Set(),
+                                )
+                              }
+                            />
+                          </th>
+                          <th className="px-2 py-2 text-start">{t("catalogueImport.code")}</th>
+                          <th className="px-2 py-2 text-start">{t("catalogue.name")}</th>
+                          <th className="px-2 py-2 text-start">{t("catalogue.baseCost")}</th>
+                          <th className="px-2 py-2 text-start">
+                            {t("catalogueImport.confidence")}
+                          </th>
+                          <th className="px-2 py-2 text-start">{t("catalogueImport.issue")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importRows.map((row) => (
+                          <tr key={row.id} className="border-b border-border/70 align-top">
+                            <td className="px-2 py-2">
+                              <input
+                                type="checkbox"
+                                disabled={row.status !== "pending"}
+                                checked={selectedRowIds.has(row.id)}
+                                onChange={() => toggleRowSelected(row.id)}
+                              />
+                            </td>
+                            <td className="whitespace-nowrap px-2 py-2 text-xs">
+                              {row.supplier_code ?? "—"}
+                            </td>
+                            <td className="max-w-[16rem] px-2 py-2">
+                              <p className="break-words">{row.name ?? "—"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {row.status === "committed"
+                                  ? t("catalogueImport.committedCount")
+                                  : row.matched_product_id
+                                    ? t("catalogueImport.willUpdate")
+                                    : t("catalogueImport.newSku")}
+                              </p>
+                            </td>
+                            <td className="whitespace-nowrap px-2 py-2 tabular-nums" dir="ltr">
+                              {row.price === null
+                                ? "—"
+                                : formatMoney(row.price, row.currency ?? "EGP", language)}
+                            </td>
+                            <td className="whitespace-nowrap px-2 py-2 tabular-nums">
+                              {Math.round(row.confidence * 100)}%
+                            </td>
+                            <td className="max-w-[14rem] px-2 py-2 text-xs text-warning">
+                              {row.issue ?? "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </TableScroll>
+                </div>
+              );
+            })()
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedBatchId(null);
+                setSelectedRowIds(new Set());
+              }}
+            >
+              {t("catalogueImport.close")}
+            </Button>
+            <Button
+              disabled={selectedRowIds.size === 0 || commitMutation.isPending}
+              onClick={() =>
+                selectedBatchId &&
+                commitMutation.mutate({
+                  data: {
+                    organizationId: activeOrganizationId ?? "",
+                    importBatchId: selectedBatchId,
+                    rowIds: Array.from(selectedRowIds),
+                  },
+                })
+              }
+            >
+              {t("catalogueImport.commitSelected")} ({selectedRowIds.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(form)} onOpenChange={(open) => !open && setForm(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -305,19 +773,41 @@ function Page() {
           </DialogHeader>
           {form && (
             <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2 flex items-center gap-2 rounded-lg border border-border p-3">
+                <input
+                  id="product-isActive"
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(event) =>
+                    setForm((current) =>
+                      current ? { ...current, isActive: event.target.checked } : current,
+                    )
+                  }
+                />
+                <Label htmlFor="product-isActive" className="cursor-pointer">
+                  {t("catalogue.active")}
+                </Label>
+                {form.isActive && (
+                  <span className="text-xs text-muted-foreground">{t("catalogue.icodeHint")}</span>
+                )}
+              </div>
               {(
                 [
-                  ["code", t("catalogue.code")],
-                  ["name", t("catalogue.name")],
-                  ["nameAr", t("catalogue.nameAr")],
-                  ["unit", t("catalogue.unit")],
-                  ["brand", t("catalogue.brand")],
-                  ["category", t("catalogue.category")],
-                  ["baseCost", t("catalogue.baseCost")],
-                  ["stockQuantity", t("portfolio.stock")],
-                  ["leadTimeDays", t("portfolio.leadTime")],
+                  ["code", t("catalogue.icode"), t("catalogue.icodeHint")],
+                  ["supplierCode", t("catalogue.supplierCode"), t("catalogue.supplierCodeHint")],
+                  ["name", t("catalogue.name"), null],
+                  ["nameAr", t("catalogue.nameAr"), null],
+                  ["unit", t("catalogue.unit"), null],
+                  ["brand", t("catalogue.brand"), null],
+                  ["category", t("catalogue.category"), null],
+                  ["baseCost", t("catalogue.baseCost"), null],
+                  ["currency", t("catalogue.currency"), null],
+                  ["incoterm", t("catalogue.incoterm"), null],
+                  ["landingCost", t("catalogue.landingCost"), t("catalogue.landingCostHint")],
+                  ["stockQuantity", t("portfolio.stock"), null],
+                  ["leadTimeDays", t("portfolio.leadTime"), null],
                 ] as const
-              ).map(([field, label]) => (
+              ).map(([field, label, hint]) => (
                 <div key={field} className="min-w-0">
                   <Label htmlFor={`product-${field}`}>{label}</Label>
                   <Input
@@ -330,6 +820,7 @@ function Page() {
                       )
                     }
                   />
+                  {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
                 </div>
               ))}
               <div className="sm:col-span-2">
@@ -403,7 +894,12 @@ function Page() {
               {t("common.cancel")}
             </Button>
             <Button
-              disabled={saveMutation.isPending || !form?.code.trim() || !form?.name.trim()}
+              disabled={
+                saveMutation.isPending ||
+                !form?.supplierCode.trim() ||
+                !form?.name.trim() ||
+                (form?.isActive && !form?.code.trim())
+              }
               onClick={submit}
             >
               {t("common.save")}

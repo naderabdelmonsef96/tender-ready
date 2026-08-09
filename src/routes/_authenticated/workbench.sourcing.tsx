@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatMoney } from "@/lib/format";
 import { listIntakeTenders } from "@/lib/intake.functions";
 import { decideStageApproval } from "@/lib/portfolio.functions";
 import {
@@ -392,12 +393,15 @@ function Page() {
                         <td className="max-w-[16rem] px-2 py-2 text-xs text-muted-foreground">
                           {quotes.length === 0
                             ? "—"
-                            : quotes
-                                .map(
-                                  (quote) =>
-                                    `${quote.supplier_name} · ${quote.unit_cost ?? "—"} ${quote.currency}`,
-                                )
-                                .join(" | ")}
+                            : quotes.map((quote, index) => (
+                                <span key={quote.id}>
+                                  {index > 0 ? " | " : ""}
+                                  {quote.supplier_name} ·{" "}
+                                  <span className="tabular-nums" dir="ltr">
+                                    {formatMoney(quote.unit_cost, quote.currency, language)}
+                                  </span>
+                                </span>
+                              ))}
                         </td>
                         <td className="px-2 py-2">
                           {locked || !canRoute ? (

@@ -476,7 +476,8 @@ export const listCatalogueProducts = createServerFn({ method: "GET" })
         .from("catalogue_products")
         .select(PRODUCT_SELECT)
         .eq("organization_id", data.organizationId)
-        .order("code"),
+        .order("is_active", { ascending: false })
+        .order("supplier_code"),
       supabase
         .from("catalogues")
         .select("id, name, name_ar, is_active")
@@ -533,7 +534,8 @@ export const upsertCatalogueProduct = createServerFn({ method: "POST" })
     const row = {
       organization_id: data.organizationId,
       catalogue_id: catalogueId,
-      code: data.code,
+      code: data.code?.trim() || null,
+      supplier_code: data.supplierCode,
       name: data.name,
       name_ar: data.nameAr ?? null,
       unit: data.unit ?? null,
@@ -541,6 +543,11 @@ export const upsertCatalogueProduct = createServerFn({ method: "POST" })
       category: data.category ?? null,
       base_cost: data.baseCost ?? null,
       currency: data.currency,
+      incoterm: data.incoterm?.trim() || null,
+      landing_cost: data.landingCost ?? null,
+      landing_cost_currency:
+        data.landingCost != null ? (data.landingCostCurrency ?? data.currency) : null,
+      landing_cost_updated_at: data.landingCost != null ? new Date().toISOString() : null,
       is_active: data.isActive,
       created_by: userId,
     };
@@ -551,9 +558,13 @@ export const upsertCatalogueProduct = createServerFn({ method: "POST" })
           .update(row)
           .eq("organization_id", data.organizationId)
           .eq("id", data.productId)
-          .select("id, code")
+          .select("id, code, supplier_code")
           .single()
-      : await supabase.from("catalogue_products").insert(row).select("id, code").single();
+      : await supabase
+          .from("catalogue_products")
+          .insert(row)
+          .select("id, code, supplier_code")
+          .single();
     if (saved.error) throw new Error(saved.error.message);
 
     if (data.specs) {
@@ -594,7 +605,7 @@ export const upsertCatalogueProduct = createServerFn({ method: "POST" })
       objectType: "catalogue_product",
       objectId: saved.data.id,
       isMaterial: true,
-      summary: `${saved.data.code} — ${data.name}`,
+      summary: `${saved.data.code ?? saved.data.supplier_code} — ${data.name}`,
     });
 
     return { product: saved.data };

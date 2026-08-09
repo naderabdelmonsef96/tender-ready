@@ -10,9 +10,9 @@ import {
 } from "@/lib/doc-ai";
 import type { ExtractionResult } from "@/lib/boq-parse";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
-const MAX_INLINE_BYTES = 18 * 1024 * 1024;
+export const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+export const MODEL = "google/gemini-3.6-flash";
+export const MAX_INLINE_BYTES = 18 * 1024 * 1024;
 
 /** Worker-safe base64 for inline document attachments. */
 function toBase64(bytes: ArrayBuffer): string {
@@ -64,18 +64,19 @@ export function readDocxText(bytes: ArrayBuffer): string {
   return chunks.join("\n\n");
 }
 
-type ContentBlock =
+export type ContentBlock =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } }
   | { type: "file"; file: { filename: string; file_data: string } };
 
-function buildBlocks(
+export function buildBlocks(
   kind: DocumentKind,
   fileName: string,
   mimeType: string | null,
   bytes: ArrayBuffer,
+  instruction: string = AI_EXTRACTION_USER_INSTRUCTION,
 ): ContentBlock[] {
-  const blocks: ContentBlock[] = [{ type: "text", text: AI_EXTRACTION_USER_INSTRUCTION }];
+  const blocks: ContentBlock[] = [{ type: "text", text: instruction }];
 
   if (kind === "pdf") {
     blocks.push({

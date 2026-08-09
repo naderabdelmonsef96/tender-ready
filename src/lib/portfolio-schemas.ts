@@ -34,32 +34,41 @@ export const decideStageSchema = z.object({
   note: z.string().trim().max(1000).optional().nullable(),
 });
 
-export const upsertProductSchema = z.object({
-  organizationId: z.string().uuid(),
-  productId: z.string().uuid().optional().nullable(),
-  catalogueId: z.string().uuid().optional().nullable(),
-  code: z.string().trim().min(1).max(80),
-  name: z.string().trim().min(2).max(300),
-  nameAr: z.string().trim().max(300).optional().nullable(),
-  unit: z.string().trim().max(40).optional().nullable(),
-  brand: z.string().trim().max(120).optional().nullable(),
-  category: z.string().trim().max(120).optional().nullable(),
-  baseCost: z.number().nonnegative().optional().nullable(),
-  currency: z.string().trim().min(3).max(3).default("EGP"),
-  isActive: z.boolean().default(true),
-  stockQuantity: z.number().nonnegative().optional().nullable(),
-  leadTimeDays: z.number().int().nonnegative().optional().nullable(),
-  specs: z
-    .array(
-      z.object({
-        key: z.string().trim().min(1).max(80),
-        value: z.string().trim().min(1).max(200),
-        unit: z.string().trim().max(40).optional().nullable(),
-      }),
-    )
-    .max(40)
-    .optional(),
-});
+export const upsertProductSchema = z
+  .object({
+    organizationId: z.string().uuid(),
+    productId: z.string().uuid().optional().nullable(),
+    catalogueId: z.string().uuid().optional().nullable(),
+    code: z.string().trim().min(1).max(80).optional().nullable(),
+    supplierCode: z.string().trim().min(1).max(80),
+    name: z.string().trim().min(2).max(300),
+    nameAr: z.string().trim().max(300).optional().nullable(),
+    unit: z.string().trim().max(40).optional().nullable(),
+    brand: z.string().trim().max(120).optional().nullable(),
+    category: z.string().trim().max(120).optional().nullable(),
+    baseCost: z.number().nonnegative().optional().nullable(),
+    currency: z.string().trim().min(3).max(3).default("EGP"),
+    incoterm: z.string().trim().max(10).optional().nullable(),
+    landingCost: z.number().nonnegative().optional().nullable(),
+    landingCostCurrency: z.string().trim().min(3).max(3).optional().nullable(),
+    isActive: z.boolean().default(true),
+    stockQuantity: z.number().nonnegative().optional().nullable(),
+    leadTimeDays: z.number().int().nonnegative().optional().nullable(),
+    specs: z
+      .array(
+        z.object({
+          key: z.string().trim().min(1).max(80),
+          value: z.string().trim().min(1).max(200),
+          unit: z.string().trim().max(40).optional().nullable(),
+        }),
+      )
+      .max(40)
+      .optional(),
+  })
+  .refine((value) => !value.isActive || Boolean(value.code?.trim()), {
+    message: "Active SKUs need an Icode.",
+    path: ["code"],
+  });
 
 export const deleteProductSchema = z.object({
   organizationId: z.string().uuid(),
