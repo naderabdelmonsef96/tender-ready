@@ -171,7 +171,7 @@ describe("parseCatalogueWorkbook landing cost and stock", () => {
         name: "Stock",
         index: 0,
         rows: [
-          [["Item code"], "Description", "Landing cost"].flat(),
+          ["Item code", "Description", "Landing cost"],
           ["A-1", "Split AC 3HP", "on request"],
         ],
       },
