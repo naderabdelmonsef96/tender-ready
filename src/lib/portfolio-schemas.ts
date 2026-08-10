@@ -100,7 +100,12 @@ export const saveQuoteSchema = z.object({
   unitCost: z.number().nonnegative().optional().nullable(),
   incoterm: z.string().trim().max(40).optional().nullable(),
   leadTimeDays: z.number().int().nonnegative().optional().nullable(),
-  validUntil: z.string().trim().max(40).optional().nullable(),
+  validUntil: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a calendar date (yyyy-mm-dd).")
+    .optional()
+    .nullable(),
   note: z.string().trim().max(1000).optional().nullable(),
 });
 
