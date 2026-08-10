@@ -47,8 +47,13 @@ export const PRODUCT_SELECT =
   "id, catalogue_id, code, supplier_code, name, name_ar, unit, brand, category, base_cost, currency, incoterm, landing_cost, landing_cost_currency, is_active, product_specifications(spec_key, spec_value, unit), stock_positions(warehouse, quantity, lead_time_days)";
 
 /** Stage the tender moves to when a stage approval is granted. */
-export const NEXT_STAGE: Record<string, "technical" | "product" | "sourcing" | "commercial"> = {
+export const NEXT_STAGE: Record<
+  string,
+  "technical" | "product" | "sourcing" | "commercial" | "finance" | "release"
+> = {
   technical: "product",
   product: "sourcing",
   sourcing: "commercial",
+  commercial: "finance",
+  finance: "release",
 };
