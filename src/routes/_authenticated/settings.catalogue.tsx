@@ -595,18 +595,19 @@ function Page() {
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-2.5"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{batch.file_name}</p>
+                      <p className="truncate text-sm font-medium">
+                        {batch.file_name ?? t("catalogueImport.title")}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {t(`catalogueImport.${statusKey}`)}
-                        {batch.row_count > 0 &&
-                          ` · ${batch.row_count} ${t("catalogueImport.rows")}`}
-                        {batch.committed_count > 0 &&
-                          ` · ${batch.committed_count} ${t("catalogueImport.committedCount")}`}
-                        {batch.status_message && ` · ${batch.status_message}`}
+                        {batch.total_rows > 0 &&
+                          ` · ${batch.total_rows} ${t("catalogueImport.rows")}`}
+                        {batch.imported_rows > 0 &&
+                          ` · ${batch.imported_rows} ${t("catalogueImport.committedCount")}`}
                       </p>
                     </div>
                     <div className="flex gap-1.5">
-                      {(batch.status === "parsed" || batch.status === "partial") && (
+                      {batch.status !== "parsing" && batch.status !== "uploaded" && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -692,42 +693,54 @@ function Page() {
                         </tr>
                       </thead>
                       <tbody>
-                        {importRows.map((row) => (
-                          <tr key={row.id} className="border-b border-border/70 align-top">
-                            <td className="px-2 py-2">
-                              <input
-                                type="checkbox"
-                                disabled={row.status !== "pending"}
-                                checked={selectedRowIds.has(row.id)}
-                                onChange={() => toggleRowSelected(row.id)}
-                              />
-                            </td>
-                            <td className="whitespace-nowrap px-2 py-2 text-xs">
-                              {row.supplier_code ?? "—"}
-                            </td>
-                            <td className="max-w-[16rem] px-2 py-2">
-                              <p className="break-words">{row.name ?? "—"}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {row.status === "committed"
-                                  ? t("catalogueImport.committedCount")
-                                  : row.matched_product_id
-                                    ? t("catalogueImport.willUpdate")
-                                    : t("catalogueImport.newSku")}
-                              </p>
-                            </td>
-                            <td className="whitespace-nowrap px-2 py-2 tabular-nums" dir="ltr">
-                              {row.price === null
-                                ? "—"
-                                : formatMoney(row.price, row.currency ?? "EGP", language)}
-                            </td>
-                            <td className="whitespace-nowrap px-2 py-2 tabular-nums">
-                              {Math.round(row.confidence * 100)}%
-                            </td>
-                            <td className="max-w-[14rem] px-2 py-2 text-xs text-warning">
-                              {row.issue ?? "—"}
-                            </td>
-                          </tr>
-                        ))}
+                        {importRows.map((row) => {
+                          const mapped = (row.mapped_data ?? {}) as {
+                            supplierCode?: string | null;
+                            name?: string | null;
+                            price?: number | null;
+                            currency?: string | null;
+                            confidence?: number;
+                            matchedProductId?: string | null;
+                          };
+                          return (
+                            <tr key={row.id} className="border-b border-border/70 align-top">
+                              <td className="px-2 py-2">
+                                <input
+                                  type="checkbox"
+                                  disabled={row.status !== "pending"}
+                                  checked={selectedRowIds.has(row.id)}
+                                  onChange={() => toggleRowSelected(row.id)}
+                                />
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-2 text-xs">
+                                {mapped.supplierCode ?? "—"}
+                              </td>
+                              <td className="max-w-[16rem] px-2 py-2">
+                                <p className="break-words">{mapped.name ?? "—"}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {row.status === "committed"
+                                    ? t("catalogueImport.committedCount")
+                                    : mapped.matchedProductId
+                                      ? t("catalogueImport.willUpdate")
+                                      : t("catalogueImport.newSku")}
+                                </p>
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-2 tabular-nums" dir="ltr">
+                                {mapped.price == null
+                                  ? "—"
+                                  : formatMoney(mapped.price, mapped.currency ?? "EGP", language)}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-2 tabular-nums">
+                                {mapped.confidence != null
+                                  ? `${Math.round(mapped.confidence * 100)}%`
+                                  : "—"}
+                              </td>
+                              <td className="max-w-[14rem] px-2 py-2 text-xs text-warning">
+                                {row.error_message ?? "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </TableScroll>

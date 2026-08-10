@@ -17,13 +17,35 @@ import { isSpreadsheet, readWorkbookSheets } from "@/lib/intake.server";
 
 const BUCKET = "catalogue-files";
 
+/**
+ * catalogue_import_batches/rows are owned by Lovable's independently-built
+ * migration (JSONB raw_data/mapped_data, no catalogue_id on the batch) — see
+ * the reconciliation migration note. This layer stores the structured
+ * product-row shape inside mapped_data instead of dedicated columns.
+ */
+type MappedRowData = {
+  supplierCode: string | null;
+  name: string | null;
+  unit: string | null;
+  brand: string | null;
+  category: string | null;
+  price: number | null;
+  currency: string | null;
+  incoterm: string | null;
+  confidence: number;
+  matchedProductId: string | null;
+};
+
+type RawRowData = {
+  sheetName: string | null;
+  pageNumber: number | null;
+};
+
 async function resolveCatalogueId(
   supabase: AuthedClient,
   organizationId: string,
-  catalogueId: string | null | undefined,
   userId: string,
 ): Promise<string> {
-  if (catalogueId) return catalogueId;
   const existing = await supabase
     .from("catalogues")
     .select("id")
@@ -52,27 +74,16 @@ export const registerCatalogueImportFile = createServerFn({ method: "POST" })
       throw new Error("Storage path is outside this organization.");
     }
 
-    const catalogueId = await resolveCatalogueId(
-      supabase,
-      data.organizationId,
-      data.catalogueId,
-      userId,
-    );
-    const kind = classifyDocument(data.originalName, data.mimeType ?? null);
-
     const batch = await supabase
       .from("catalogue_import_batches")
       .insert({
         organization_id: data.organizationId,
-        catalogue_id: catalogueId,
         file_name: data.originalName,
         storage_path: data.storagePath,
-        mime_type: data.mimeType ?? null,
-        kind,
         status: "uploaded",
-        uploaded_by: userId,
+        created_by: userId,
       })
-      .select("id, kind, status")
+      .select("id, status")
       .single();
     if (batch.error) throw new Error(batch.error.message);
 
@@ -86,7 +97,10 @@ export const registerCatalogueImportFile = createServerFn({ method: "POST" })
       summary: `${data.originalName} uploaded for catalogue import`,
     });
 
-    return { importBatchId: batch.data.id, kind: batch.data.kind };
+    return {
+      importBatchId: batch.data.id,
+      kind: classifyDocument(data.originalName, data.mimeType ?? null),
+    };
   });
 
 export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
@@ -98,19 +112,20 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
 
     const batch = await supabase
       .from("catalogue_import_batches")
-      .select("id, catalogue_id, storage_path, mime_type, file_name, kind")
+      .select("id, file_name, storage_path")
       .eq("organization_id", data.organizationId)
       .eq("id", data.importBatchId)
       .maybeSingle();
     if (batch.error) throw new Error(batch.error.message);
     if (!batch.data) throw new Error("Import batch not found");
     const batchData = batch.data;
+    if (!batchData.storage_path || !batchData.file_name) {
+      throw new Error("This import batch has no stored file to read.");
+    }
+    const storagePath = batchData.storage_path;
+    const fileName = batchData.file_name;
 
-    const finish = async (patch: {
-      status: string;
-      status_message?: string | null;
-      row_count?: number;
-    }) => {
+    const finish = async (patch: { status: string; total_rows?: number; failed_rows?: number }) => {
       const { data: updated, error } = await supabase
         .from("catalogue_import_batches")
         .update(patch)
@@ -121,109 +136,79 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
       return updated;
     };
 
+    const failWithMessage = async (status: string, message: string) => {
+      await supabase.from("catalogue_import_rows").insert({
+        batch_id: batchData.id,
+        row_number: null,
+        raw_data: null,
+        mapped_data: null,
+        status: "failed",
+        error_message: message,
+      });
+      const updated = await finish({ status, total_rows: 0, failed_rows: 1 });
+      return { batch: updated, rowCount: 0 };
+    };
+
     await supabase
       .from("catalogue_import_batches")
       .update({ status: "parsing" })
       .eq("id", batchData.id);
 
-    const download = await supabase.storage.from(BUCKET).download(batchData.storage_path);
+    const download = await supabase.storage.from(BUCKET).download(storagePath);
     if (download.error || !download.data) {
-      const updated = await finish({
-        status: "failed",
-        status_message: download.error?.message ?? "The stored file could not be read.",
-      });
-      return { batch: updated, rowCount: 0 };
+      return failWithMessage(
+        "failed",
+        download.error?.message ?? "The stored file could not be read.",
+      );
     }
     const bytes = await download.data.arrayBuffer();
 
     type Row = {
-      sheetName: string | null;
-      pageNumber: number | null;
-      supplierCode: string | null;
-      name: string;
-      unit: string | null;
-      brand: string | null;
-      category: string | null;
-      price: number | null;
-      currency: string | null;
-      incoterm: string | null;
-      confidence: number;
+      raw: RawRowData;
+      mapped: MappedRowData;
+      rowNumber: number;
       issue: string | null;
-      rowIndex: number;
     };
     let rows: Row[];
 
-    if (isSpreadsheet(batchData.file_name)) {
+    if (isSpreadsheet(fileName)) {
       const parsed = parseCatalogueWorkbook(readWorkbookSheets(bytes));
-      rows = parsed.rows.map((row) => ({
-        sheetName: row.sheetName,
-        pageNumber: null,
-        supplierCode: row.supplierCode,
-        name: row.name,
-        unit: row.unit,
-        brand: row.brand,
-        category: row.category,
-        price: row.price,
-        currency: row.currency,
-        incoterm: row.incoterm,
-        confidence: 1,
-        issue: row.issue,
-        rowIndex: row.rowIndex,
-      }));
-      if (rows.length === 0 && parsed.issues.length > 0) {
-        const updated = await finish({ status: "failed", status_message: parsed.issues.join(" ") });
-        return { batch: updated, rowCount: 0 };
+      if (parsed.rows.length === 0) {
+        return failWithMessage(
+          "failed",
+          parsed.issues.join(" ") || "No product rows could be recognised in this file.",
+        );
       }
+      rows = parsed.rows.map((row) => ({
+        raw: { sheetName: row.sheetName, pageNumber: null },
+        mapped: {
+          supplierCode: row.supplierCode,
+          name: row.name,
+          unit: row.unit,
+          brand: row.brand,
+          category: row.category,
+          price: row.price,
+          currency: row.currency,
+          incoterm: row.incoterm,
+          confidence: 1,
+          matchedProductId: null,
+        },
+        rowNumber: row.rowIndex,
+        issue: row.issue,
+      }));
     } else {
       const outcome = await extractCatalogueDocument({
-        fileName: batchData.file_name,
-        mimeType: batchData.mime_type,
+        fileName,
+        mimeType: data.mimeType ?? null,
         bytes,
       });
       if (!outcome.ok) {
-        const updated = await finish({ status: outcome.status, status_message: outcome.message });
-        return { batch: updated, rowCount: 0 };
+        return failWithMessage(outcome.status, outcome.message);
       }
       rows = outcome.rows.map((row) => ({
-        sheetName: null,
-        pageNumber: row.pageNumber,
-        supplierCode: row.supplierCode,
-        name: row.name,
-        unit: row.unit,
-        brand: row.brand,
-        category: row.category,
-        price: row.price,
-        currency: row.currency,
-        incoterm: row.incoterm,
-        confidence: row.confidence,
-        issue: row.issue,
-        rowIndex: row.rowIndex,
-      }));
-    }
-
-    // Dedupe hint: does a catalogue entry with this supplier code already exist?
-    const existingProducts = await supabase
-      .from("catalogue_products")
-      .select("id, supplier_code")
-      .eq("organization_id", data.organizationId)
-      .eq("catalogue_id", batchData.catalogue_id);
-    if (existingProducts.error) throw new Error(existingProducts.error.message);
-    const productBySupplierCode = new Map(
-      (existingProducts.data ?? []).map((product) => [product.supplier_code, product.id]),
-    );
-
-    await supabase.from("catalogue_import_rows").delete().eq("import_batch_id", batchData.id);
-
-    for (let offset = 0; offset < rows.length; offset += 500) {
-      const chunk = rows.slice(offset, offset + 500);
-      const { error } = await supabase.from("catalogue_import_rows").insert(
-        chunk.map((row) => ({
-          organization_id: data.organizationId,
-          import_batch_id: batchData.id,
-          row_index: row.rowIndex,
-          sheet_name: row.sheetName,
-          page_number: row.pageNumber,
-          supplier_code: row.supplierCode,
+        raw: { sheetName: null, pageNumber: row.pageNumber },
+        mapped: {
+          supplierCode: row.supplierCode,
           name: row.name,
           unit: row.unit,
           brand: row.brand,
@@ -232,22 +217,48 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
           currency: row.currency,
           incoterm: row.incoterm,
           confidence: row.confidence,
-          issue: row.issue,
+          matchedProductId: null,
+        },
+        rowNumber: row.rowIndex,
+        issue: row.issue,
+      }));
+    }
+
+    // Dedupe hint: does a catalogue entry with this supplier code already exist?
+    const catalogueId = await resolveCatalogueId(supabase, data.organizationId, userId);
+    const existingProducts = await supabase
+      .from("catalogue_products")
+      .select("id, supplier_code")
+      .eq("organization_id", data.organizationId)
+      .eq("catalogue_id", catalogueId);
+    if (existingProducts.error) throw new Error(existingProducts.error.message);
+    const productBySupplierCode = new Map(
+      (existingProducts.data ?? []).map((product) => [product.supplier_code, product.id]),
+    );
+    for (const row of rows) {
+      if (row.mapped.supplierCode) {
+        row.mapped.matchedProductId = productBySupplierCode.get(row.mapped.supplierCode) ?? null;
+      }
+    }
+
+    await supabase.from("catalogue_import_rows").delete().eq("batch_id", batchData.id);
+
+    for (let offset = 0; offset < rows.length; offset += 500) {
+      const chunk = rows.slice(offset, offset + 500);
+      const { error } = await supabase.from("catalogue_import_rows").insert(
+        chunk.map((row) => ({
+          batch_id: batchData.id,
+          row_number: row.rowNumber,
+          raw_data: row.raw as never,
+          mapped_data: row.mapped as never,
           status: "pending",
-          matched_product_id: row.supplierCode
-            ? (productBySupplierCode.get(row.supplierCode) ?? null)
-            : null,
+          error_message: row.issue,
         })),
       );
       if (error) throw new Error(error.message);
     }
 
-    const updated = await finish({
-      status: rows.length === 0 ? "partial" : "parsed",
-      status_message:
-        rows.length === 0 ? "No product rows could be recognised in this file." : null,
-      row_count: rows.length,
-    });
+    const updated = await finish({ status: "parsed", total_rows: rows.length, failed_rows: 0 });
 
     await writeAudit(supabase, {
       organizationId: data.organizationId,
@@ -256,7 +267,7 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
       objectType: "catalogue_import_batch",
       objectId: batchData.id,
       isMaterial: false,
-      summary: `${rows.length} row(s) extracted from ${batchData.file_name}`,
+      summary: `${rows.length} row(s) extracted from ${fileName}`,
     });
 
     return { batch: updated, rowCount: rows.length };
@@ -268,7 +279,7 @@ export const listCatalogueImportBatches = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: batches, error } = await context.supabase
       .from("catalogue_import_batches")
-      .select("id, file_name, kind, status, status_message, row_count, committed_count, created_at")
+      .select("id, file_name, status, total_rows, imported_rows, failed_rows, created_at")
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -281,23 +292,22 @@ export const getCatalogueImportRows = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => getCatalogueImportRowsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const [batch, rows] = await Promise.all([
-      supabase
-        .from("catalogue_import_batches")
-        .select("*")
-        .eq("organization_id", data.organizationId)
-        .eq("id", data.importBatchId)
-        .maybeSingle(),
-      supabase
-        .from("catalogue_import_rows")
-        .select("*")
-        .eq("organization_id", data.organizationId)
-        .eq("import_batch_id", data.importBatchId)
-        .order("row_index"),
-    ]);
+    const batch = await supabase
+      .from("catalogue_import_batches")
+      .select("*")
+      .eq("organization_id", data.organizationId)
+      .eq("id", data.importBatchId)
+      .maybeSingle();
     if (batch.error) throw new Error(batch.error.message);
-    if (rows.error) throw new Error(rows.error.message);
     if (!batch.data) throw new Error("Import batch not found");
+
+    const rows = await supabase
+      .from("catalogue_import_rows")
+      .select("*")
+      .eq("batch_id", data.importBatchId)
+      .order("row_number");
+    if (rows.error) throw new Error(rows.error.message);
+
     return { batch: batch.data, rows: rows.data ?? [] };
   });
 
@@ -310,73 +320,105 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
 
     const batch = await supabase
       .from("catalogue_import_batches")
-      .select("id, catalogue_id, committed_count, file_name")
+      .select("id, file_name, imported_rows, failed_rows")
       .eq("organization_id", data.organizationId)
       .eq("id", data.importBatchId)
       .maybeSingle();
     if (batch.error) throw new Error(batch.error.message);
     if (!batch.data) throw new Error("Import batch not found");
+    const batchData = batch.data;
 
     const rows = await supabase
       .from("catalogue_import_rows")
       .select("*")
-      .eq("organization_id", data.organizationId)
-      .eq("import_batch_id", data.importBatchId)
+      .eq("batch_id", data.importBatchId)
       .eq("status", "pending")
       .in("id", data.rowIds);
     if (rows.error) throw new Error(rows.error.message);
 
+    const catalogueId = await resolveCatalogueId(supabase, data.organizationId, userId);
+
     let committed = 0;
     let skipped = 0;
     for (const row of rows.data ?? []) {
-      if (!row.supplier_code || !row.name) {
+      const mapped = (row.mapped_data ?? {}) as Partial<MappedRowData>;
+      if (!mapped.supplierCode || !mapped.name) {
         skipped += 1;
+        await supabase
+          .from("catalogue_import_rows")
+          .update({ status: "failed", error_message: "Missing supplier code or name." })
+          .eq("id", row.id);
         continue;
       }
-      const saved = await supabase
+
+      const existing = await supabase
         .from("catalogue_products")
-        .upsert(
-          {
-            organization_id: data.organizationId,
-            catalogue_id: batch.data.catalogue_id,
-            supplier_code: row.supplier_code,
-            name: row.name,
-            unit: row.unit,
-            brand: row.brand,
-            category: row.category,
-            base_cost: row.price,
-            currency: row.currency ?? "EGP",
-            incoterm: row.incoterm,
-            is_active: false,
-            created_by: userId,
-          },
-          { onConflict: "catalogue_id,supplier_code" },
-        )
         .select("id")
-        .single();
+        .eq("catalogue_id", catalogueId)
+        .eq("supplier_code", mapped.supplierCode)
+        .maybeSingle();
+      if (existing.error) throw new Error(existing.error.message);
+
+      const productRow = {
+        organization_id: data.organizationId,
+        catalogue_id: catalogueId,
+        supplier_code: mapped.supplierCode,
+        name: mapped.name,
+        unit: mapped.unit ?? null,
+        brand: mapped.brand ?? null,
+        category: mapped.category ?? null,
+        base_cost: mapped.price ?? null,
+        currency: mapped.currency ?? "EGP",
+        incoterm: mapped.incoterm ?? null,
+        is_active: false,
+        created_by: userId,
+      };
+
+      const saved = existing.data
+        ? await supabase
+            .from("catalogue_products")
+            .update(productRow)
+            .eq("id", existing.data.id)
+            .select("id")
+            .single()
+        : await supabase.from("catalogue_products").insert(productRow).select("id").single();
       if (saved.error) throw new Error(saved.error.message);
 
-      const update = await supabase
+      const updatedMapped: MappedRowData = {
+        supplierCode: mapped.supplierCode,
+        name: mapped.name,
+        unit: mapped.unit ?? null,
+        brand: mapped.brand ?? null,
+        category: mapped.category ?? null,
+        price: mapped.price ?? null,
+        currency: mapped.currency ?? null,
+        incoterm: mapped.incoterm ?? null,
+        confidence: mapped.confidence ?? 1,
+        matchedProductId: saved.data.id,
+      };
+      await supabase
         .from("catalogue_import_rows")
-        .update({ status: "committed", matched_product_id: saved.data.id })
+        .update({ status: "committed", mapped_data: updatedMapped as never })
         .eq("id", row.id);
-      if (update.error) throw new Error(update.error.message);
       committed += 1;
     }
 
     await supabase
       .from("catalogue_import_batches")
-      .update({ committed_count: batch.data.committed_count + committed })
-      .eq("id", batch.data.id);
+      .update({
+        imported_rows: batchData.imported_rows + committed,
+        failed_rows: batchData.failed_rows + skipped,
+      })
+      .eq("id", batchData.id);
 
     await writeAudit(supabase, {
       organizationId: data.organizationId,
       actorId: userId,
       action: "catalogue_import.committed",
       objectType: "catalogue_import_batch",
-      objectId: batch.data.id,
+      objectId: batchData.id,
       isMaterial: true,
-      summary: `${committed} row(s) committed from ${batch.data.file_name}${skipped > 0 ? `, ${skipped} skipped (missing code or name)` : ""}`,
+      summary: `${committed} row(s) committed from ${batchData.file_name ?? "import"}${skipped > 0 ? `, ${skipped} skipped (missing code or name)` : ""}`,
     });
 
     return { committed, skipped };
@@ -398,7 +440,9 @@ export const discardCatalogueImportBatch = createServerFn({ method: "POST" })
     if (batch.error) throw new Error(batch.error.message);
     if (!batch.data) throw new Error("Import batch not found");
 
-    await supabase.storage.from(BUCKET).remove([batch.data.storage_path]);
+    if (batch.data.storage_path) {
+      await supabase.storage.from(BUCKET).remove([batch.data.storage_path]);
+    }
     const { error } = await supabase
       .from("catalogue_import_batches")
       .delete()
@@ -412,7 +456,7 @@ export const discardCatalogueImportBatch = createServerFn({ method: "POST" })
       objectType: "catalogue_import_batch",
       objectId: batch.data.id,
       isMaterial: false,
-      summary: `${batch.data.file_name} discarded`,
+      summary: `${batch.data.file_name ?? "import"} discarded`,
     });
 
     return { discarded: true };

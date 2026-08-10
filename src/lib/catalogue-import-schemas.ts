@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const registerCatalogueImportSchema = z.object({
   organizationId: z.string().uuid(),
-  catalogueId: z.string().uuid().optional().nullable(),
   storagePath: z.string().trim().min(3).max(500),
   originalName: z.string().trim().min(1).max(300),
   mimeType: z.string().trim().max(200).optional().nullable(),
@@ -12,6 +11,7 @@ export const registerCatalogueImportSchema = z.object({
 export const startCatalogueImportExtractionSchema = z.object({
   organizationId: z.string().uuid(),
   importBatchId: z.string().uuid(),
+  mimeType: z.string().trim().max(200).optional().nullable(),
 });
 
 export const listCatalogueImportBatchesSchema = z.object({
