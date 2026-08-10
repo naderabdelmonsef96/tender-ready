@@ -435,6 +435,8 @@ export type Database = {
           incoterm: string | null
           is_active: boolean
           landing_cost: number | null
+          landing_cost_currency: string | null
+          landing_cost_updated_at: string | null
           name: string
           name_ar: string | null
           organization_id: string
@@ -456,6 +458,8 @@ export type Database = {
           incoterm?: string | null
           is_active?: boolean
           landing_cost?: number | null
+          landing_cost_currency?: string | null
+          landing_cost_updated_at?: string | null
           name: string
           name_ar?: string | null
           organization_id: string
@@ -477,6 +481,8 @@ export type Database = {
           incoterm?: string | null
           is_active?: boolean
           landing_cost?: number | null
+          landing_cost_currency?: string | null
+          landing_cost_updated_at?: string | null
           name?: string
           name_ar?: string | null
           organization_id?: string
