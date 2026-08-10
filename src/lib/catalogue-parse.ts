@@ -165,12 +165,27 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
       const supplierCode = cellText(get("supplierCode")).trim() || null;
       const priceRaw = get("price");
       const price = parsePrice(priceRaw);
-      const priceLooksUnreadable =
-        priceRaw !== null && priceRaw !== undefined && priceRaw !== "" && price === null;
+      const unreadable = (raw: CellValue, parsed: number | null): boolean =>
+        raw !== null && raw !== undefined && raw !== "" && parsed === null;
+      const priceLooksUnreadable = unreadable(priceRaw, price);
+
+      const landingRaw = get("landingCost");
+      const landingCost = parsePrice(landingRaw);
+      const stockRaw = get("stockQuantity");
+      const stockQuantity = parsePrice(stockRaw);
+      const leadRaw = get("leadTimeDays");
+      const leadTimeParsed = parsePrice(leadRaw);
+      const leadTimeDays = leadTimeParsed === null ? null : Math.max(0, Math.round(leadTimeParsed));
 
       let issue: string | null = null;
       if (!supplierCode) issue = "No supplier code found in this row.";
       else if (priceLooksUnreadable) issue = "Price could not be read as a number.";
+      else if (unreadable(landingRaw, landingCost))
+        issue = "Landing cost could not be read as a number.";
+      else if (unreadable(stockRaw, stockQuantity))
+        issue = "Stock quantity could not be read as a number.";
+      else if (unreadable(leadRaw, leadTimeParsed))
+        issue = "Lead time could not be read as a number.";
 
       rows.push({
         rowIndex: r,
@@ -183,8 +198,14 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
         price,
         currency: cellText(get("currency")).trim().toUpperCase() || null,
         incoterm: cellText(get("incoterm")).trim().toUpperCase() || null,
+        landingCost,
+        landingCostCurrency: cellText(get("landingCostCurrency")).trim().toUpperCase() || null,
+        stockQuantity: stockQuantity === null ? null : Math.max(0, stockQuantity),
+        warehouse: cellText(get("warehouse")).trim() || null,
+        leadTimeDays,
         issue,
       });
+
     }
   }
 
