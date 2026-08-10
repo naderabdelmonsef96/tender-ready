@@ -1186,6 +1186,94 @@ export type Database = {
           },
         ]
       }
+      pricing_lines: {
+        Row: {
+          boq_item_id: string
+          cost_basis: number
+          cost_basis_currency: string
+          cost_basis_source: string
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          margin_basis: string
+          margin_percent: number
+          note: string | null
+          organization_id: string
+          tender_id: string
+          total_price: number
+          unit_price: number
+          unit_price_currency: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          boq_item_id: string
+          cost_basis: number
+          cost_basis_currency: string
+          cost_basis_source: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          margin_basis?: string
+          margin_percent?: number
+          note?: string | null
+          organization_id: string
+          tender_id: string
+          total_price: number
+          unit_price: number
+          unit_price_currency: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          boq_item_id?: string
+          cost_basis?: number
+          cost_basis_currency?: string
+          cost_basis_source?: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          margin_basis?: string
+          margin_percent?: number
+          note?: string | null
+          organization_id?: string
+          tender_id?: string
+          total_price?: number
+          unit_price?: number
+          unit_price_currency?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_lines_boq_item_id_fkey"
+            columns: ["boq_item_id"]
+            isOneToOne: true
+            referencedRelation: "boq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_lines_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_specifications: {
         Row: {
           created_at: string
@@ -1275,6 +1363,158 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quotation_lines: {
+        Row: {
+          boq_item_id: string
+          created_at: string
+          description: string
+          description_ar: string | null
+          id: string
+          organization_id: string
+          pricing_line_id: string | null
+          quantity: number | null
+          quotation_id: string
+          sort_order: number
+          total_price: number
+          unit: string | null
+          unit_price: number
+        }
+        Insert: {
+          boq_item_id: string
+          created_at?: string
+          description: string
+          description_ar?: string | null
+          id?: string
+          organization_id: string
+          pricing_line_id?: string | null
+          quantity?: number | null
+          quotation_id: string
+          sort_order?: number
+          total_price: number
+          unit?: string | null
+          unit_price: number
+        }
+        Update: {
+          boq_item_id?: string
+          created_at?: string
+          description?: string
+          description_ar?: string | null
+          id?: string
+          organization_id?: string
+          pricing_line_id?: string | null
+          quantity?: number | null
+          quotation_id?: string
+          sort_order?: number
+          total_price?: number
+          unit?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_lines_boq_item_id_fkey"
+            columns: ["boq_item_id"]
+            isOneToOne: false
+            referencedRelation: "boq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_lines_pricing_line_id_fkey"
+            columns: ["pricing_line_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_lines_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          fx_rates: Json
+          id: string
+          organization_id: string
+          quotation_number: string
+          released_at: string | null
+          released_by: string | null
+          status: string
+          subtotal: number
+          tender_id: string
+          total: number
+          updated_at: string
+          valid_until: string | null
+          vat_amount: number
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          fx_rates?: Json
+          id?: string
+          organization_id: string
+          quotation_number: string
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+          subtotal: number
+          tender_id: string
+          total: number
+          updated_at?: string
+          valid_until?: string | null
+          vat_amount?: number
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fx_rates?: Json
+          id?: string
+          organization_id?: string
+          quotation_number?: string
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+          subtotal?: number
+          tender_id?: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+          vat_amount?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_tender_id_fkey"
+            columns: ["tender_id"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       requirements: {
         Row: {
@@ -2026,10 +2266,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_decide_finance: { Args: { _org: string }; Returns: boolean }
       can_decide_match: { Args: { _org: string }; Returns: boolean }
+      can_decide_pricing: { Args: { _org: string }; Returns: boolean }
       can_decide_sourcing: { Args: { _org: string }; Returns: boolean }
       can_edit_intake: { Args: { _org: string }; Returns: boolean }
       can_manage_catalogue: { Args: { _org: string }; Returns: boolean }
+      can_release_quotation: { Args: { _org: string }; Returns: boolean }
       can_review_technical: { Args: { _org: string }; Returns: boolean }
       has_any_org_role: {
         Args: {
