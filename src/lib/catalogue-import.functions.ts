@@ -375,11 +375,7 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
       if (existing.error) throw new Error(existing.error.message);
 
       const currency = mapped.currency ?? "EGP";
-      // Blank cells must not overwrite a stored value with null, so an update
-      // only carries the fields this row actually supplied.
-      const optional = <T,>(value: T | null | undefined): Record<string, T> | Record<string, never> =>
-        value === null || value === undefined ? {} : ({ value } as never);
-      const productRow = {
+      const insertRow = {
         organization_id: data.organizationId,
         catalogue_id: catalogueId,
         supplier_code: mapped.supplierCode,
@@ -397,16 +393,32 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         is_active: false,
         created_by: userId,
       };
-      void optional;
+
+      // Blank cells must not wipe a stored value, so an update only carries
+      // the fields this row actually supplied.
+      const updateRow: Record<string, unknown> = { name: mapped.name };
+      if (mapped.unit != null) updateRow["unit"] = mapped.unit;
+      if (mapped.brand != null) updateRow["brand"] = mapped.brand;
+      if (mapped.category != null) updateRow["category"] = mapped.category;
+      if (mapped.price != null) updateRow["base_cost"] = mapped.price;
+      if (mapped.currency != null) updateRow["currency"] = mapped.currency;
+      if (mapped.incoterm != null) updateRow["incoterm"] = mapped.incoterm;
+      if (mapped.landingCost != null) {
+        updateRow["landing_cost"] = mapped.landingCost;
+        updateRow["landing_cost_currency"] = mapped.landingCostCurrency ?? currency;
+        updateRow["landing_cost_updated_at"] = new Date().toISOString();
+      }
 
       const saved = existing.data
         ? await supabase
             .from("catalogue_products")
-            .update(productRow)
+            .update(updateRow)
             .eq("id", existing.data.id)
             .select("id")
             .single()
-        : await supabase.from("catalogue_products").insert(productRow).select("id").single();
+        : await supabase.from("catalogue_products").insert(insertRow).select("id").single();
+      if (saved.error) throw new Error(saved.error.message);
+
       if (saved.error) throw new Error(saved.error.message);
 
       if (mapped.stockQuantity != null) {
