@@ -155,10 +155,7 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
       const candidate = detectColumns(sheet.rows[r] ?? []);
       const isMappingSheet =
         candidate.supplierCode !== undefined && candidate.internalCode !== undefined;
-      if (
-        (candidate.name !== undefined || isMappingSheet) &&
-        Object.keys(candidate).length >= 2
-      ) {
+      if ((candidate.name !== undefined || isMappingSheet) && Object.keys(candidate).length >= 2) {
         headerRowIndex = r;
         columns = candidate;
         break;

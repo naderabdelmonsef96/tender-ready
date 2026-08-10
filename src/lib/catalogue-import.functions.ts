@@ -398,7 +398,9 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         (mapped.internalCode ? await findBy("code", mapped.internalCode) : null);
 
       if (!existingProduct && !mapped.name) {
-        await fail("This code pair does not match an existing product yet, and the row has no product name.");
+        await fail(
+          "This code pair does not match an existing product yet, and the row has no product name.",
+        );
         continue;
       }
       if (!existingProduct && !mapped.supplierCode) {

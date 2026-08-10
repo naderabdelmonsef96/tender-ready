@@ -684,6 +684,9 @@ function Page() {
                             />
                           </th>
                           <th className="px-2 py-2 text-start">{t("catalogueImport.code")}</th>
+                          <th className="px-2 py-2 text-start">
+                            {t("catalogueImport.internalCode")}
+                          </th>
                           <th className="px-2 py-2 text-start">{t("catalogue.name")}</th>
                           <th className="px-2 py-2 text-start">{t("catalogue.baseCost")}</th>
                           <th className="px-2 py-2 text-start">
@@ -700,6 +703,7 @@ function Page() {
                         {importRows.map((row) => {
                           const mapped = (row.mapped_data ?? {}) as {
                             supplierCode?: string | null;
+                            internalCode?: string | null;
                             name?: string | null;
                             price?: number | null;
                             currency?: string | null;
@@ -725,13 +729,18 @@ function Page() {
                               <td className="whitespace-nowrap px-2 py-2 text-xs">
                                 {mapped.supplierCode ?? "—"}
                               </td>
+                              <td className="whitespace-nowrap px-2 py-2 text-xs">
+                                {mapped.internalCode ?? "—"}
+                              </td>
                               <td className="max-w-[16rem] px-2 py-2">
                                 <p className="break-words">{mapped.name ?? "—"}</p>
                                 <p className="text-xs text-muted-foreground">
                                   {row.status === "committed"
                                     ? t("catalogueImport.committedCount")
                                     : mapped.matchedProductId
-                                      ? t("catalogueImport.willUpdate")
+                                      ? mapped.supplierCode && mapped.internalCode
+                                        ? t("catalogueImport.linkedCodes")
+                                        : t("catalogueImport.willUpdate")
                                       : t("catalogueImport.newSku")}
                                 </p>
                               </td>
