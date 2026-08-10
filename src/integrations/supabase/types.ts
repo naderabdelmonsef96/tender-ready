@@ -426,7 +426,7 @@ export type Database = {
           brand: string | null
           catalogue_id: string
           category: string | null
-          code: string
+          code: string | null
           created_at: string
           created_by: string | null
           currency: string
@@ -440,7 +440,7 @@ export type Database = {
           name: string
           name_ar: string | null
           organization_id: string
-          supplier_code: string | null
+          supplier_code: string
           unit: string | null
           updated_at: string
         }
@@ -449,7 +449,7 @@ export type Database = {
           brand?: string | null
           catalogue_id: string
           category?: string | null
-          code: string
+          code?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -463,7 +463,7 @@ export type Database = {
           name: string
           name_ar?: string | null
           organization_id: string
-          supplier_code?: string | null
+          supplier_code: string
           unit?: string | null
           updated_at?: string
         }
@@ -472,7 +472,7 @@ export type Database = {
           brand?: string | null
           catalogue_id?: string
           category?: string | null
-          code?: string
+          code?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -486,7 +486,7 @@ export type Database = {
           name?: string
           name_ar?: string | null
           organization_id?: string
-          supplier_code?: string | null
+          supplier_code?: string
           unit?: string | null
           updated_at?: string
         }
