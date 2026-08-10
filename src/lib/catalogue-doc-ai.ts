@@ -21,7 +21,8 @@ export const CATALOGUE_AI_SYSTEM_PROMPT = [
 export const CATALOGUE_AI_USER_INSTRUCTION = [
   "Extract every product/price row from the attached catalogue or price list.",
   "Return JSON with exactly this shape:",
-  '{"rows":[{"page":number|null,"supplierCode":string|null,"name":string,"unit":string|null,"brand":string|null,"category":string|null,"price":number|null,"currency":string|null,"incoterm":string|null,"landingCost":number|null,"landingCostCurrency":string|null,"stockQuantity":number|null,"warehouse":string|null,"leadTimeDays":number|null,"sourceText":string,"confidence":number}]}',
+  '{"rows":[{"page":number|null,"supplierCode":string|null,"internalCode":string|null,"name":string,"unit":string|null,"brand":string|null,"category":string|null,"price":number|null,"currency":string|null,"incoterm":string|null,"landingCost":number|null,"landingCostCurrency":string|null,"stockQuantity":number|null,"warehouse":string|null,"leadTimeDays":number|null,"sourceText":string,"confidence":number}]}',
+  "internalCode is the company's own item code (often written as I-code) when the document shows one next to the supplier/catalogue code; leave null otherwise.",
   "landingCost is the landed/cost price of the item when the document states one; leave null otherwise.",
   "stockQuantity, warehouse and leadTimeDays are only for documents that list on-hand stock. Never estimate them.",
 ].join("\n");
@@ -31,6 +32,7 @@ const numberish = z.union([z.number(), z.string(), z.null()]).optional();
 const catalogueAiRowSchema = z.object({
   page: numberish,
   supplierCode: z.string().nullable().optional(),
+  internalCode: z.string().nullable().optional(),
   name: z.string().min(1),
   unit: z.string().nullable().optional(),
   brand: z.string().nullable().optional(),
@@ -87,6 +89,7 @@ export type MappedCatalogueAiRow = {
   rowIndex: number;
   pageNumber: number | null;
   supplierCode: string | null;
+  internalCode: string | null;
   name: string;
   unit: string | null;
   brand: string | null;
