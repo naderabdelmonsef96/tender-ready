@@ -426,7 +426,7 @@ export type Database = {
           brand: string | null
           catalogue_id: string
           category: string | null
-          code: string | null
+          code: string
           created_at: string
           created_by: string | null
           currency: string
@@ -435,12 +435,10 @@ export type Database = {
           incoterm: string | null
           is_active: boolean
           landing_cost: number | null
-          landing_cost_currency: string | null
-          landing_cost_updated_at: string | null
           name: string
           name_ar: string | null
           organization_id: string
-          supplier_code: string
+          supplier_code: string | null
           unit: string | null
           updated_at: string
         }
@@ -449,7 +447,7 @@ export type Database = {
           brand?: string | null
           catalogue_id: string
           category?: string | null
-          code?: string | null
+          code: string
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -458,12 +456,10 @@ export type Database = {
           incoterm?: string | null
           is_active?: boolean
           landing_cost?: number | null
-          landing_cost_currency?: string | null
-          landing_cost_updated_at?: string | null
           name: string
           name_ar?: string | null
           organization_id: string
-          supplier_code: string
+          supplier_code?: string | null
           unit?: string | null
           updated_at?: string
         }
@@ -472,7 +468,7 @@ export type Database = {
           brand?: string | null
           catalogue_id?: string
           category?: string | null
-          code?: string | null
+          code?: string
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -481,12 +477,10 @@ export type Database = {
           incoterm?: string | null
           is_active?: boolean
           landing_cost?: number | null
-          landing_cost_currency?: string | null
-          landing_cost_updated_at?: string | null
           name?: string
           name_ar?: string | null
           organization_id?: string
-          supplier_code?: string
+          supplier_code?: string | null
           unit?: string | null
           updated_at?: string
         }
