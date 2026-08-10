@@ -441,11 +441,13 @@ function Page() {
                 )}
 
                 <div className="flex flex-wrap gap-2">
-                  {!activeTask && data.tender.current_stage === "commercial" && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("quotation.awaitingCommercial")}
-                    </p>
-                  )}
+                  {!activeTask &&
+                    data.tender.current_stage !== "finance" &&
+                    data.tender.current_stage !== "release" && (
+                      <p className="text-xs text-muted-foreground">
+                        {t("quotation.awaitingCommercial")}
+                      </p>
+                    )}
                   {!activeTask && data.tender.current_stage === "finance" && canManage && (
                     <Button
                       disabled={submitFinanceMutation.isPending}
