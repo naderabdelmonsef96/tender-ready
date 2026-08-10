@@ -411,9 +411,10 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
       const insertRow = {
         organization_id: data.organizationId,
         catalogue_id: catalogueId,
-        supplier_code: mapped.supplierCode,
+        // Guarded above: the insert branch only runs with both present.
+        supplier_code: mapped.supplierCode ?? "",
         code: mapped.internalCode ?? null,
-        name: mapped.name,
+        name: mapped.name ?? "",
         unit: mapped.unit ?? null,
         brand: mapped.brand ?? null,
         category: mapped.category ?? null,
