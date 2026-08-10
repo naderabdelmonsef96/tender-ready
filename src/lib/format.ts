@@ -24,11 +24,12 @@ export function formatMoney(
   const decimal = toDecimal(value);
   if (!decimal) return "—";
   const locale = language === "ar" ? "ar-EG" : "en-GB";
+  // No fixed fraction digits: each ISO 4217 currency has its own minor unit
+  // (BHD is 3 decimals/fils, JPY is 0, EGP/USD/EUR are 2) — Intl already
+  // knows this per currency code, so hardcoding 2 silently mis-rounds BHD.
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
   }).format(decimal.toNumber());
 }
 

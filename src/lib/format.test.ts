@@ -22,6 +22,13 @@ describe("formatMoney", () => {
     expect(formatMoney(null, "EGP", "en")).toBe("—");
     expect(formatMoney("oops", "EGP", "en")).toBe("—");
   });
+
+  it("uses each currency's own ISO 4217 minor unit, not a fixed 2 decimals", () => {
+    // BHD (Bahraini Dinar) has 3 decimal places (fils), not 2.
+    expect(formatMoney("125.5", "BHD", "en")).toMatch(/125\.500/);
+    // JPY has 0 decimal places.
+    expect(formatMoney("1500", "JPY", "en")).toMatch(/1,500(?!\.\d)/);
+  });
 });
 
 describe("formatDate", () => {
