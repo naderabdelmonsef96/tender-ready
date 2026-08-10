@@ -179,3 +179,42 @@ describe("parseCatalogueWorkbook landing cost and stock", () => {
     expect(result.rows[0]?.issue).toBe("Landing cost could not be read as a number.");
   });
 });
+
+describe("parseCatalogueWorkbook I-code integration", () => {
+  it("reads a code-mapping sheet that has no product name", () => {
+    const result = parseCatalogueWorkbook([
+      {
+        name: "Codes",
+        index: 0,
+        rows: [
+          ["Catalogue code", "I-Code"],
+          ["5200", "I0612"],
+          ["5201", ""],
+        ],
+      },
+    ]);
+
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]?.supplierCode).toBe("5200");
+    expect(result.rows[0]?.internalCode).toBe("I0612");
+    expect(result.rows[0]?.name).toBeNull();
+  });
+
+  it("reads an I-code column alongside product rows", () => {
+    const result = parseCatalogueWorkbook([
+      {
+        name: "Price list",
+        index: 0,
+        rows: [
+          ["Item code", "Internal code", "Description", "Unit price"],
+          ["5200", "I0612", "Split AC 3HP", 42000],
+        ],
+      },
+    ]);
+
+    expect(result.rows[0]?.supplierCode).toBe("5200");
+    expect(result.rows[0]?.internalCode).toBe("I0612");
+    expect(result.rows[0]?.name).toBe("Split AC 3HP");
+    expect(result.rows[0]?.issue).toBeNull();
+  });
+});

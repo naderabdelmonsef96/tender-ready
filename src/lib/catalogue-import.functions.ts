@@ -25,6 +25,7 @@ const BUCKET = "catalogue-files";
  */
 type MappedRowData = {
   supplierCode: string | null;
+  internalCode: string | null;
   name: string | null;
   unit: string | null;
   brand: string | null;
@@ -188,6 +189,7 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
         raw: { sheetName: row.sheetName, pageNumber: null },
         mapped: {
           supplierCode: row.supplierCode,
+          internalCode: row.internalCode,
           name: row.name,
           unit: row.unit,
           brand: row.brand,
@@ -219,6 +221,7 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
         raw: { sheetName: null, pageNumber: row.pageNumber },
         mapped: {
           supplierCode: row.supplierCode,
+          internalCode: row.internalCode,
           name: row.name,
           unit: row.unit,
           brand: row.brand,
@@ -239,21 +242,29 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
       }));
     }
 
-    // Dedupe hint: does a catalogue entry with this supplier code already exist?
+    // Dedupe hint: does a catalogue entry already exist under either the
+    // supplier/catalogue code or the company I-code?
     const catalogueId = await resolveCatalogueId(supabase, data.organizationId, userId);
     const existingProducts = await supabase
       .from("catalogue_products")
-      .select("id, supplier_code")
+      .select("id, supplier_code, code")
       .eq("organization_id", data.organizationId)
       .eq("catalogue_id", catalogueId);
     if (existingProducts.error) throw new Error(existingProducts.error.message);
-    const productBySupplierCode = new Map(
-      (existingProducts.data ?? []).map((product) => [product.supplier_code, product.id]),
-    );
+    const productBySupplierCode = new Map<string, string>();
+    const productByInternalCode = new Map<string, string>();
+    for (const product of existingProducts.data ?? []) {
+      if (product.supplier_code) productBySupplierCode.set(product.supplier_code, product.id);
+      if (product.code) productByInternalCode.set(product.code, product.id);
+    }
     for (const row of rows) {
-      if (row.mapped.supplierCode) {
-        row.mapped.matchedProductId = productBySupplierCode.get(row.mapped.supplierCode) ?? null;
-      }
+      const bySupplier = row.mapped.supplierCode
+        ? productBySupplierCode.get(row.mapped.supplierCode)
+        : undefined;
+      const byInternal = row.mapped.internalCode
+        ? productByInternalCode.get(row.mapped.internalCode)
+        : undefined;
+      row.mapped.matchedProductId = bySupplier ?? byInternal ?? null;
     }
 
     await supabase.from("catalogue_import_rows").delete().eq("batch_id", batchData.id);
@@ -357,29 +368,55 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
     let skipped = 0;
     for (const row of rows.data ?? []) {
       const mapped = (row.mapped_data ?? {}) as Partial<MappedRowData>;
-      if (!mapped.supplierCode || !mapped.name) {
+      const fail = async (message: string) => {
         skipped += 1;
         await supabase
           .from("catalogue_import_rows")
-          .update({ status: "failed", error_message: "Missing supplier code or name." })
+          .update({ status: "failed", error_message: message })
           .eq("id", row.id);
+      };
+      if (!mapped.supplierCode && !mapped.internalCode) {
+        await fail("Missing supplier code and I-code.");
         continue;
       }
 
-      const existing = await supabase
-        .from("catalogue_products")
-        .select("id")
-        .eq("catalogue_id", catalogueId)
-        .eq("supplier_code", mapped.supplierCode)
-        .maybeSingle();
-      if (existing.error) throw new Error(existing.error.message);
+      // Auto-integration: a row is matched on either code, so a sheet that
+      // only carries the I-code next to the catalogue code links the two on
+      // an existing product instead of creating a duplicate.
+      const findBy = async (column: "supplier_code" | "code", value: string) => {
+        const found = await supabase
+          .from("catalogue_products")
+          .select("id, supplier_code, code")
+          .eq("catalogue_id", catalogueId)
+          .eq(column, value)
+          .maybeSingle();
+        if (found.error) throw new Error(found.error.message);
+        return found.data;
+      };
+      const existingProduct =
+        (mapped.supplierCode ? await findBy("supplier_code", mapped.supplierCode) : null) ??
+        (mapped.internalCode ? await findBy("code", mapped.internalCode) : null);
+
+      if (!existingProduct && !mapped.name) {
+        await fail(
+          "This code pair does not match an existing product yet, and the row has no product name.",
+        );
+        continue;
+      }
+      if (!existingProduct && !mapped.supplierCode) {
+        await fail("A new product needs a supplier/catalogue code.");
+        continue;
+      }
+      const existing = { data: existingProduct };
 
       const currency = mapped.currency ?? "EGP";
       const insertRow = {
         organization_id: data.organizationId,
         catalogue_id: catalogueId,
-        supplier_code: mapped.supplierCode,
-        name: mapped.name,
+        // Guarded above: the insert branch only runs with both present.
+        supplier_code: mapped.supplierCode ?? "",
+        code: mapped.internalCode ?? null,
+        name: mapped.name ?? "",
         unit: mapped.unit ?? null,
         brand: mapped.brand ?? null,
         category: mapped.category ?? null,
@@ -396,7 +433,15 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
 
       // Blank cells must not wipe a stored value, so an update only carries
       // the fields this row actually supplied.
-      const updateRow: Partial<typeof insertRow> = { name: mapped.name };
+      const updateRow: Partial<typeof insertRow> = {};
+      if (mapped.name != null) updateRow.name = mapped.name;
+      // Fill in whichever code the stored product is still missing.
+      if (mapped.internalCode != null && existing.data?.code !== mapped.internalCode) {
+        updateRow.code = mapped.internalCode;
+      }
+      if (mapped.supplierCode != null && existing.data?.supplier_code !== mapped.supplierCode) {
+        updateRow.supplier_code = mapped.supplierCode;
+      }
       if (mapped.unit != null) updateRow.unit = mapped.unit;
       if (mapped.brand != null) updateRow.brand = mapped.brand;
       if (mapped.category != null) updateRow.category = mapped.category;
@@ -434,8 +479,9 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
       }
 
       const updatedMapped: MappedRowData = {
-        supplierCode: mapped.supplierCode,
-        name: mapped.name,
+        supplierCode: mapped.supplierCode ?? null,
+        internalCode: mapped.internalCode ?? null,
+        name: mapped.name ?? null,
         unit: mapped.unit ?? null,
         brand: mapped.brand ?? null,
         category: mapped.category ?? null,

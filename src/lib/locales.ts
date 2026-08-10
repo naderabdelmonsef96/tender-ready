@@ -469,7 +469,7 @@ export const en = {
   catalogueImport: {
     title: "Import catalogue",
     subtitle:
-      "Upload a supplier price list. Excel and CSV are read exactly — PDFs, Word and photos are read by AI. Review every row before it's added.",
+      "Upload a supplier price list, catalogues or any relevant sheets related to the portfolio. Excel and CSV are read exactly — PDFs, Word and photos are read by AI. Review every row before it's added.",
     upload: "Upload file",
     uploading: "Uploading…",
     extracting: "Reading…",
@@ -489,6 +489,8 @@ export const en = {
     committedToast: "row(s) committed to the catalogue.",
     selectAll: "Select all",
     code: "Supplier code",
+    internalCode: "I-code",
+    linkedCodes: "Codes linked",
     landingCost: "Landing cost",
     stock: "Stock",
     warehouse: "Warehouse",
@@ -974,7 +976,7 @@ export const ar: typeof en = {
   catalogueImport: {
     title: "استيراد الكتالوج",
     subtitle:
-      "ارفع قائمة أسعار من مورّد. إكسل وCSV تُقرأ بدقة تامة — أما PDF والصور ومستندات وورد فتُقرأ بالذكاء الاصطناعي. راجع كل صف قبل إضافته.",
+      "ارفع قائمة أسعار من مورّد أو كتالوجات أو أي جداول متعلقة بمحفظة المنتجات. إكسل وCSV تُقرأ بدقة تامة — أما PDF والصور ومستندات وورد فتُقرأ بالذكاء الاصطناعي. راجع كل صف قبل إضافته.",
     upload: "رفع ملف",
     uploading: "جارٍ الرفع…",
     extracting: "جارٍ القراءة…",
@@ -995,6 +997,8 @@ export const ar: typeof en = {
     committedToast: "صف تمت إضافته إلى الكتالوج.",
     selectAll: "تحديد الكل",
     code: "كود المورّد",
+    internalCode: "الكود الداخلي",
+    linkedCodes: "تم ربط الكودين",
     landingCost: "التكلفة الواصلة",
     stock: "المخزون",
     warehouse: "المستودع",
