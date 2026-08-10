@@ -126,3 +126,56 @@ describe("parseCatalogueWorkbook", () => {
     expect(result.issues[0]).toMatch(/no recognisable header row/i);
   });
 });
+
+describe("parseCatalogueWorkbook landing cost and stock", () => {
+  it("reads landing cost, stock quantity, warehouse and lead time", () => {
+    const result = parseCatalogueWorkbook([
+      {
+        name: "Stock",
+        index: 0,
+        rows: [
+          [
+            "Item code",
+            "Description",
+            "UOM",
+            "Unit price",
+            "Currency",
+            "Landed cost",
+            "Cost currency",
+            "Stock qty",
+            "Warehouse",
+            "Lead time days",
+          ],
+          ["A-1", "Split AC 3HP", "Each", 42000, "EGP", "31500.50", "EGP", 4, "Cairo", "7"],
+          ["A-2", "Cable tray 300mm", "m", 900, "EGP", "", "", "", "", ""],
+        ],
+      },
+    ]);
+
+    expect(result.rows).toHaveLength(2);
+    const [stocked, plain] = result.rows;
+    expect(stocked?.landingCost).toBe(31500.5);
+    expect(stocked?.landingCostCurrency).toBe("EGP");
+    expect(stocked?.stockQuantity).toBe(4);
+    expect(stocked?.warehouse).toBe("Cairo");
+    expect(stocked?.leadTimeDays).toBe(7);
+    expect(stocked?.issue).toBeNull();
+    expect(plain?.landingCost).toBeNull();
+    expect(plain?.stockQuantity).toBeNull();
+    expect(plain?.warehouse).toBeNull();
+  });
+
+  it("flags a landing cost that cannot be read as a number", () => {
+    const result = parseCatalogueWorkbook([
+      {
+        name: "Stock",
+        index: 0,
+        rows: [
+          [["Item code"], "Description", "Landing cost"].flat(),
+          ["A-1", "Split AC 3HP", "on request"],
+        ],
+      },
+    ]);
+    expect(result.rows[0]?.issue).toBe("Landing cost could not be read as a number.");
+  });
+});
