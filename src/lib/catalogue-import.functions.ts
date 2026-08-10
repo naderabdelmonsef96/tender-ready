@@ -420,7 +420,7 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         : await supabase.from("catalogue_products").insert(insertRow).select("id").single();
       if (saved.error) throw new Error(saved.error.message);
 
-      if (saved.error) throw new Error(saved.error.message);
+
 
       if (mapped.stockQuantity != null) {
         const stock = await supabase.from("stock_positions").upsert(
