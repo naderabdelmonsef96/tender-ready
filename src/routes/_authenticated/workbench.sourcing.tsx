@@ -602,6 +602,9 @@ function Page() {
                   <Label htmlFor={`quote-${field}`}>{label}</Label>
                   <Input
                     id={`quote-${field}`}
+                    // A free-text date reaches Postgres as-is, so the calendar
+                    // input keeps it an ISO yyyy-mm-dd value.
+                    type={field === "validUntil" ? "date" : "text"}
                     className="mt-1"
                     value={quoteForm[field]}
                     onChange={(event) =>
