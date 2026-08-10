@@ -21,7 +21,8 @@ Confirmed against the live database: `pricing_lines`, `quotations`, and `quotati
 
 ## Note
 
-The Pricing and Commercial Review screens are Phase 4 work and are not implemented yet — this migration only creates the storage and permissions they will use. Applying it removes the missing-table error but the screens will still be empty until Phase 4 is built.
+The Pricing screen and its server code are already in the project but currently fail — both at runtime and at typecheck — because the tables don't exist yet. Applying this migration regenerates the database types and clears those errors; the Commercial Review & Quotation screen is still Phase 4 work and not built yet.
+
 
 ## Technical
 
