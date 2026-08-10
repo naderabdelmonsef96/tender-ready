@@ -432,9 +432,12 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
       };
 
       // Blank cells must not wipe a stored value, so an update only carries
-      // the fields this row actually supplied.
+      // the fields this row actually supplied. Descriptive fields
+      // (name/unit/brand/category) are deliberately excluded from updates —
+      // a recurring price/stock refresh sheet must never silently overwrite
+      // a curated product description; those are only set on creation or
+      // edited manually via the catalogue form.
       const updateRow: Partial<typeof insertRow> = {};
-      if (mapped.name != null) updateRow.name = mapped.name;
       // Fill in whichever code the stored product is still missing.
       if (mapped.internalCode != null && existing.data?.code !== mapped.internalCode) {
         updateRow.code = mapped.internalCode;
@@ -442,9 +445,6 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
       if (mapped.supplierCode != null && existing.data?.supplier_code !== mapped.supplierCode) {
         updateRow.supplier_code = mapped.supplierCode;
       }
-      if (mapped.unit != null) updateRow.unit = mapped.unit;
-      if (mapped.brand != null) updateRow.brand = mapped.brand;
-      if (mapped.category != null) updateRow.category = mapped.category;
       if (mapped.price != null) updateRow.base_cost = mapped.price;
       if (mapped.currency != null) updateRow.currency = mapped.currency;
       if (mapped.incoterm != null) updateRow.incoterm = mapped.incoterm;
