@@ -112,8 +112,9 @@ export function mapCatalogueAiPayload(payload: CatalogueAiDocumentPayload): Mapp
     const confidence = toConfidence(raw.confidence);
     const price = toNumber(raw.price);
     const supplierCode = raw.supplierCode?.trim() || null;
+    const internalCode = raw.internalCode?.trim() || null;
     let issue: string | null = null;
-    if (!supplierCode) issue = "No supplier code was found for this row.";
+    if (!supplierCode && !internalCode) issue = "No supplier code was found for this row.";
     else if (confidence < 0.6)
       issue = "Low reading confidence — verify against the original document.";
 
@@ -121,7 +122,9 @@ export function mapCatalogueAiPayload(payload: CatalogueAiDocumentPayload): Mapp
       rowIndex: index,
       pageNumber: toNumber(raw.page),
       supplierCode,
+      internalCode,
       name: raw.name.trim(),
+
       unit: raw.unit?.trim() || null,
       brand: raw.brand?.trim() || null,
       category: raw.category?.trim() || null,
