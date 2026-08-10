@@ -175,6 +175,14 @@ function Page() {
     return map;
   }, [data]);
 
+  const productById = useMemo(() => {
+    const map = new Map<string, BoardData["products"][number]>();
+    for (const product of data?.products ?? []) map.set(product.id, product);
+    return map;
+  }, [data]);
+
+
+
   const quotesByItem = useMemo(() => {
     const map = new Map<string, BoardData["quotes"]>();
     for (const quote of data?.quotes ?? []) {
