@@ -1,0 +1,1 @@
+ALTER TABLE public.catalogue_products ADD COLUMN IF NOT EXISTS supplier_code TEXT, ADD COLUMN IF NOT EXISTS incoterm TEXT, ADD COLUMN IF NOT EXISTS landing_cost NUMERIC;
