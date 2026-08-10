@@ -396,18 +396,19 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
 
       // Blank cells must not wipe a stored value, so an update only carries
       // the fields this row actually supplied.
-      const updateRow: Record<string, unknown> = { name: mapped.name };
-      if (mapped.unit != null) updateRow["unit"] = mapped.unit;
-      if (mapped.brand != null) updateRow["brand"] = mapped.brand;
-      if (mapped.category != null) updateRow["category"] = mapped.category;
-      if (mapped.price != null) updateRow["base_cost"] = mapped.price;
-      if (mapped.currency != null) updateRow["currency"] = mapped.currency;
-      if (mapped.incoterm != null) updateRow["incoterm"] = mapped.incoterm;
+      const updateRow: Partial<typeof insertRow> = { name: mapped.name };
+      if (mapped.unit != null) updateRow.unit = mapped.unit;
+      if (mapped.brand != null) updateRow.brand = mapped.brand;
+      if (mapped.category != null) updateRow.category = mapped.category;
+      if (mapped.price != null) updateRow.base_cost = mapped.price;
+      if (mapped.currency != null) updateRow.currency = mapped.currency;
+      if (mapped.incoterm != null) updateRow.incoterm = mapped.incoterm;
       if (mapped.landingCost != null) {
-        updateRow["landing_cost"] = mapped.landingCost;
-        updateRow["landing_cost_currency"] = mapped.landingCostCurrency ?? currency;
-        updateRow["landing_cost_updated_at"] = new Date().toISOString();
+        updateRow.landing_cost = mapped.landingCost;
+        updateRow.landing_cost_currency = mapped.landingCostCurrency ?? currency;
+        updateRow.landing_cost_updated_at = new Date().toISOString();
       }
+
 
       const saved = existing.data
         ? await supabase
