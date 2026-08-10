@@ -181,8 +181,6 @@ function Page() {
     return map;
   }, [data]);
 
-
-
   const quotesByItem = useMemo(() => {
     const map = new Map<string, BoardData["quotes"]>();
     for (const quote of data?.quotes ?? []) {

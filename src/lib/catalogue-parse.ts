@@ -77,7 +77,6 @@ const FIELD_ORDER: ColumnField[] = [
   "leadTimeDays",
 ];
 
-
 /**
  * Two passes so one column can never satisfy two fields: exact header matches
  * are claimed first (so "Item code" can't also be read as "name" just because
@@ -205,7 +204,6 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
         leadTimeDays,
         issue,
       });
-
     }
   }
 

@@ -409,7 +409,6 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         updateRow.landing_cost_updated_at = new Date().toISOString();
       }
 
-
       const saved = existing.data
         ? await supabase
             .from("catalogue_products")
@@ -419,8 +418,6 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
             .single()
         : await supabase.from("catalogue_products").insert(insertRow).select("id").single();
       if (saved.error) throw new Error(saved.error.message);
-
-
 
       if (mapped.stockQuantity != null) {
         const stock = await supabase.from("stock_positions").upsert(
