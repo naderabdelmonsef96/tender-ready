@@ -687,6 +687,10 @@ function Page() {
                           <th className="px-2 py-2 text-start">{t("catalogue.name")}</th>
                           <th className="px-2 py-2 text-start">{t("catalogue.baseCost")}</th>
                           <th className="px-2 py-2 text-start">
+                            {t("catalogueImport.landingCost")}
+                          </th>
+                          <th className="px-2 py-2 text-start">{t("catalogueImport.stock")}</th>
+                          <th className="px-2 py-2 text-start">
                             {t("catalogueImport.confidence")}
                           </th>
                           <th className="px-2 py-2 text-start">{t("catalogueImport.issue")}</th>
@@ -699,6 +703,12 @@ function Page() {
                             name?: string | null;
                             price?: number | null;
                             currency?: string | null;
+                            unit?: string | null;
+                            landingCost?: number | null;
+                            landingCostCurrency?: string | null;
+                            stockQuantity?: number | null;
+                            warehouse?: string | null;
+                            leadTimeDays?: number | null;
                             confidence?: number;
                             matchedProductId?: string | null;
                           };
@@ -729,6 +739,36 @@ function Page() {
                                 {mapped.price == null
                                   ? "—"
                                   : formatMoney(mapped.price, mapped.currency ?? "EGP", language)}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-2 tabular-nums" dir="ltr">
+                                {mapped.landingCost == null
+                                  ? "—"
+                                  : formatMoney(
+                                      mapped.landingCost,
+                                      mapped.landingCostCurrency ?? mapped.currency ?? "EGP",
+                                      language,
+                                    )}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-2 text-xs">
+                                {mapped.stockQuantity == null ? (
+                                  "—"
+                                ) : (
+                                  <>
+                                    <span className="tabular-nums" dir="ltr">
+                                      {`ex-stock · ${mapped.stockQuantity} · ${mapped.unit ?? "—"}`}
+                                    </span>
+                                    <span className="block text-muted-foreground">
+                                      {[
+                                        mapped.warehouse ?? "main",
+                                        mapped.leadTimeDays == null
+                                          ? null
+                                          : `${mapped.leadTimeDays}${t("catalogueImport.days")}`,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" · ")}
+                                    </span>
+                                  </>
+                                )}
                               </td>
                               <td className="whitespace-nowrap px-2 py-2 tabular-nums">
                                 {mapped.confidence != null
