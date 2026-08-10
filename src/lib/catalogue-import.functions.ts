@@ -32,6 +32,11 @@ type MappedRowData = {
   price: number | null;
   currency: string | null;
   incoterm: string | null;
+  landingCost: number | null;
+  landingCostCurrency: string | null;
+  stockQuantity: number | null;
+  warehouse: string | null;
+  leadTimeDays: number | null;
   confidence: number;
   matchedProductId: string | null;
 };
@@ -190,6 +195,11 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
           price: row.price,
           currency: row.currency,
           incoterm: row.incoterm,
+          landingCost: row.landingCost,
+          landingCostCurrency: row.landingCostCurrency,
+          stockQuantity: row.stockQuantity,
+          warehouse: row.warehouse,
+          leadTimeDays: row.leadTimeDays,
           confidence: 1,
           matchedProductId: null,
         },
@@ -216,6 +226,11 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
           price: row.price,
           currency: row.currency,
           incoterm: row.incoterm,
+          landingCost: row.landingCost,
+          landingCostCurrency: row.landingCostCurrency,
+          stockQuantity: row.stockQuantity,
+          warehouse: row.warehouse,
+          leadTimeDays: row.leadTimeDays,
           confidence: row.confidence,
           matchedProductId: null,
         },
@@ -359,7 +374,8 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         .maybeSingle();
       if (existing.error) throw new Error(existing.error.message);
 
-      const productRow = {
+      const currency = mapped.currency ?? "EGP";
+      const insertRow = {
         organization_id: data.organizationId,
         catalogue_id: catalogueId,
         supplier_code: mapped.supplierCode,
@@ -368,21 +384,54 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         brand: mapped.brand ?? null,
         category: mapped.category ?? null,
         base_cost: mapped.price ?? null,
-        currency: mapped.currency ?? "EGP",
+        currency,
         incoterm: mapped.incoterm ?? null,
+        landing_cost: mapped.landingCost ?? null,
+        landing_cost_currency:
+          mapped.landingCost == null ? null : (mapped.landingCostCurrency ?? currency),
+        landing_cost_updated_at: mapped.landingCost == null ? null : new Date().toISOString(),
         is_active: false,
         created_by: userId,
       };
 
+      // Blank cells must not wipe a stored value, so an update only carries
+      // the fields this row actually supplied.
+      const updateRow: Partial<typeof insertRow> = { name: mapped.name };
+      if (mapped.unit != null) updateRow.unit = mapped.unit;
+      if (mapped.brand != null) updateRow.brand = mapped.brand;
+      if (mapped.category != null) updateRow.category = mapped.category;
+      if (mapped.price != null) updateRow.base_cost = mapped.price;
+      if (mapped.currency != null) updateRow.currency = mapped.currency;
+      if (mapped.incoterm != null) updateRow.incoterm = mapped.incoterm;
+      if (mapped.landingCost != null) {
+        updateRow.landing_cost = mapped.landingCost;
+        updateRow.landing_cost_currency = mapped.landingCostCurrency ?? currency;
+        updateRow.landing_cost_updated_at = new Date().toISOString();
+      }
+
       const saved = existing.data
         ? await supabase
             .from("catalogue_products")
-            .update(productRow)
+            .update(updateRow)
             .eq("id", existing.data.id)
             .select("id")
             .single()
-        : await supabase.from("catalogue_products").insert(productRow).select("id").single();
+        : await supabase.from("catalogue_products").insert(insertRow).select("id").single();
       if (saved.error) throw new Error(saved.error.message);
+
+      if (mapped.stockQuantity != null) {
+        const stock = await supabase.from("stock_positions").upsert(
+          {
+            organization_id: data.organizationId,
+            product_id: saved.data.id,
+            warehouse: mapped.warehouse?.trim() || "main",
+            quantity: mapped.stockQuantity,
+            lead_time_days: mapped.leadTimeDays ?? 0,
+          },
+          { onConflict: "product_id,warehouse" },
+        );
+        if (stock.error) throw new Error(stock.error.message);
+      }
 
       const updatedMapped: MappedRowData = {
         supplierCode: mapped.supplierCode,
@@ -393,6 +442,11 @@ export const commitCatalogueImportRows = createServerFn({ method: "POST" })
         price: mapped.price ?? null,
         currency: mapped.currency ?? null,
         incoterm: mapped.incoterm ?? null,
+        landingCost: mapped.landingCost ?? null,
+        landingCostCurrency: mapped.landingCostCurrency ?? null,
+        stockQuantity: mapped.stockQuantity ?? null,
+        warehouse: mapped.warehouse ?? null,
+        leadTimeDays: mapped.leadTimeDays ?? null,
         confidence: mapped.confidence ?? 1,
         matchedProductId: saved.data.id,
       };

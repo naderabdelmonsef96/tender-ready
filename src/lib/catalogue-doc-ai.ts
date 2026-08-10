@@ -21,7 +21,9 @@ export const CATALOGUE_AI_SYSTEM_PROMPT = [
 export const CATALOGUE_AI_USER_INSTRUCTION = [
   "Extract every product/price row from the attached catalogue or price list.",
   "Return JSON with exactly this shape:",
-  '{"rows":[{"page":number|null,"supplierCode":string|null,"name":string,"unit":string|null,"brand":string|null,"category":string|null,"price":number|null,"currency":string|null,"incoterm":string|null,"sourceText":string,"confidence":number}]}',
+  '{"rows":[{"page":number|null,"supplierCode":string|null,"name":string,"unit":string|null,"brand":string|null,"category":string|null,"price":number|null,"currency":string|null,"incoterm":string|null,"landingCost":number|null,"landingCostCurrency":string|null,"stockQuantity":number|null,"warehouse":string|null,"leadTimeDays":number|null,"sourceText":string,"confidence":number}]}',
+  "landingCost is the landed/cost price of the item when the document states one; leave null otherwise.",
+  "stockQuantity, warehouse and leadTimeDays are only for documents that list on-hand stock. Never estimate them.",
 ].join("\n");
 
 const numberish = z.union([z.number(), z.string(), z.null()]).optional();
@@ -36,6 +38,11 @@ const catalogueAiRowSchema = z.object({
   price: numberish,
   currency: z.string().nullable().optional(),
   incoterm: z.string().nullable().optional(),
+  landingCost: numberish,
+  landingCostCurrency: z.string().nullable().optional(),
+  stockQuantity: numberish,
+  warehouse: z.string().nullable().optional(),
+  leadTimeDays: numberish,
   sourceText: z.string().nullable().optional(),
   confidence: numberish,
 });
@@ -87,6 +94,11 @@ export type MappedCatalogueAiRow = {
   price: number | null;
   currency: string | null;
   incoterm: string | null;
+  landingCost: number | null;
+  landingCostCurrency: string | null;
+  stockQuantity: number | null;
+  warehouse: string | null;
+  leadTimeDays: number | null;
   confidence: number;
   issue: string | null;
 };
@@ -113,6 +125,14 @@ export function mapCatalogueAiPayload(payload: CatalogueAiDocumentPayload): Mapp
       price,
       currency: raw.currency?.trim().toUpperCase() || null,
       incoterm: raw.incoterm?.trim().toUpperCase() || null,
+      landingCost: toNumber(raw.landingCost),
+      landingCostCurrency: raw.landingCostCurrency?.trim().toUpperCase() || null,
+      stockQuantity: toNumber(raw.stockQuantity),
+      warehouse: raw.warehouse?.trim() || null,
+      leadTimeDays: (() => {
+        const n = toNumber(raw.leadTimeDays);
+        return n === null ? null : Math.max(0, Math.round(n));
+      })(),
       confidence,
       issue,
     };

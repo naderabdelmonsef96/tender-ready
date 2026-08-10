@@ -175,6 +175,12 @@ function Page() {
     return map;
   }, [data]);
 
+  const productById = useMemo(() => {
+    const map = new Map<string, BoardData["products"][number]>();
+    for (const product of data?.products ?? []) map.set(product.id, product);
+    return map;
+  }, [data]);
+
   const quotesByItem = useMemo(() => {
     const map = new Map<string, BoardData["quotes"]>();
     for (const quote of data?.quotes ?? []) {
@@ -383,9 +389,33 @@ function Page() {
                         </td>
                         <td className="whitespace-nowrap px-2 py-2">
                           {route ? (
-                            <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                              {t(`routeKind.${route.route}`)}
-                            </span>
+                            (() => {
+                              const product = route.product_id
+                                ? (productById.get(route.product_id) ?? null)
+                                : null;
+                              const stock = (product?.stock_positions ?? []).filter((position) =>
+                                route.warehouse ? position.warehouse === route.warehouse : true,
+                              );
+                              const quantity = stock.reduce(
+                                (total, position) => total + Number(position.quantity ?? 0),
+                                0,
+                              );
+                              const showStock = route.route === "ex_stock" && stock.length > 0;
+                              return (
+                                <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                                  {showStock ? (
+                                    <>
+                                      {t("routeKind.ex_stock")}
+                                      <span className="tabular-nums" dir="ltr">
+                                        {` · ${quantity} · ${product?.unit ?? item.unit ?? "—"}`}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    t(`routeKind.${route.route}`)
+                                  )}
+                                </span>
+                              );
+                            })()
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}

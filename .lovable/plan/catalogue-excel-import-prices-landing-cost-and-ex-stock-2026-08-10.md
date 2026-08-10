@@ -8,14 +8,14 @@ This plan extends the same import flow so one spreadsheet can set selling/base c
 
 1. Upload one Excel/CSV price list in Settings → Catalogues → Import.
 2. The importer recognises extra columns (any of these header wordings):
-   - Landing cost: "landing cost", "landed cost", "cost landed"
-   - Landing cost currency: "landing currency", "landed cost currency"
-   - Stock quantity: "stock", "qty in stock", "on hand", "available quantity"
-   - Warehouse: "warehouse", "store", "location"
-   - Lead time: "lead time", "lead time days", "delivery days"
+  - Landing cost: "landing cost", "landed cost", "cost landed", "cost price", "CP"
+  - Landing cost currency: "landing currency", "landed cost currency"
+  - Stock quantity: "stock", "qty in stock", "on hand", "available quantity"
+  - Warehouse: "warehouse", "store", "location"
+  - Lead time: "lead time", "lead time days", "delivery days"
 3. The preview table shows the new columns alongside price, with a per-row warning when a value can't be read as a number — nothing is invented or silently zeroed.
 4. On commit, each row updates the catalogue product's base cost, currency, incoterm, landing cost (+ currency and a landing-cost updated timestamp), and writes/updates the stock position for the given warehouse (defaulting to `main`).
-5. A row with stock quantity greater than zero is what makes an item behave as **ex-stock** in matching and supply routing — the same rule the manual product form uses today, so imported rows will flow straight into Screen 04 ex-stock routing.
+5. A row with stock quantity greater than zero is what makes an item behave as **ex-stock** in matching and supply routing — the same rule the manual product form uses today, so imported rows will flow straight into Screen 04 ex-stock routing, for example, if the item has qty as 4 Each , it should show exstock - 4 - Each, so the formula in the table would be extock-QTY-UOM
 
 ## Rules kept
 
