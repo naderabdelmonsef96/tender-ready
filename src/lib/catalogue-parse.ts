@@ -16,6 +16,11 @@ export type ParsedCatalogueRow = {
   price: number | null;
   currency: string | null;
   incoterm: string | null;
+  landingCost: number | null;
+  landingCostCurrency: string | null;
+  stockQuantity: number | null;
+  warehouse: string | null;
+  leadTimeDays: number | null;
   issue: string | null;
 };
 
@@ -26,7 +31,19 @@ export type CatalogueParseResult = {
 };
 
 type ColumnField =
-  "supplierCode" | "name" | "unit" | "brand" | "category" | "price" | "currency" | "incoterm";
+  | "supplierCode"
+  | "name"
+  | "unit"
+  | "brand"
+  | "category"
+  | "price"
+  | "currency"
+  | "incoterm"
+  | "landingCost"
+  | "landingCostCurrency"
+  | "stockQuantity"
+  | "warehouse"
+  | "leadTimeDays";
 
 const HEADER_SYNONYMS: Record<ColumnField, string[]> = {
   supplierCode: ["supplier code", "item code", "part no", "part number", "code", "sku", "model"],
@@ -34,9 +51,14 @@ const HEADER_SYNONYMS: Record<ColumnField, string[]> = {
   unit: ["unit of measure", "uom", "unit"],
   brand: ["manufacturer", "brand", "make"],
   category: ["category", "family", "group", "type"],
-  price: ["unit price", "list price", "price", "cost", "rate", "amount"],
+  price: ["unit price", "list price", "selling price", "price", "rate", "amount"],
   currency: ["currency", "ccy"],
   incoterm: ["incoterm", "delivery term", "terms"],
+  landingCost: ["landing cost", "landed cost", "cost landed", "cost price", "cp", "cost"],
+  landingCostCurrency: ["landing currency", "landed cost currency", "cost currency"],
+  stockQuantity: ["qty in stock", "available quantity", "stock qty", "stock", "on hand", "qty"],
+  warehouse: ["warehouse", "store", "location"],
+  leadTimeDays: ["lead time days", "lead time", "delivery days"],
 };
 
 const FIELD_ORDER: ColumnField[] = [
@@ -48,7 +70,13 @@ const FIELD_ORDER: ColumnField[] = [
   "price",
   "currency",
   "incoterm",
+  "landingCost",
+  "landingCostCurrency",
+  "stockQuantity",
+  "warehouse",
+  "leadTimeDays",
 ];
+
 
 /**
  * Two passes so one column can never satisfy two fields: exact header matches
