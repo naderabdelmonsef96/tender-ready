@@ -9,7 +9,8 @@ export type ParsedCatalogueRow = {
   rowIndex: number;
   sheetName: string;
   supplierCode: string | null;
-  name: string;
+  internalCode: string | null;
+  name: string | null;
   unit: string | null;
   brand: string | null;
   category: string | null;
@@ -31,6 +32,7 @@ export type CatalogueParseResult = {
 };
 
 type ColumnField =
+  | "internalCode"
   | "supplierCode"
   | "name"
   | "unit"
@@ -46,6 +48,17 @@ type ColumnField =
   | "leadTimeDays";
 
 const HEADER_SYNONYMS: Record<ColumnField, string[]> = {
+  internalCode: [
+    "internal code",
+    "i code",
+    "icode",
+    "i-code",
+    "our code",
+    "company code",
+    "internal ref",
+    "internal reference",
+    "item id",
+  ],
   supplierCode: ["supplier code", "item code", "part no", "part number", "code", "sku", "model"],
   name: ["product name", "description", "product", "item", "name"],
   unit: ["unit of measure", "uom", "unit"],
@@ -62,6 +75,7 @@ const HEADER_SYNONYMS: Record<ColumnField, string[]> = {
 };
 
 const FIELD_ORDER: ColumnField[] = [
+  "internalCode",
   "supplierCode",
   "name",
   "unit",
@@ -139,7 +153,12 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
     let columns: Partial<Record<ColumnField, number>> = {};
     for (let r = 0; r < Math.min(sheet.rows.length, MAX_HEADER_SCAN_ROWS); r++) {
       const candidate = detectColumns(sheet.rows[r] ?? []);
-      if (candidate.name !== undefined && Object.keys(candidate).length >= 2) {
+      const isMappingSheet =
+        candidate.supplierCode !== undefined && candidate.internalCode !== undefined;
+      if (
+        (candidate.name !== undefined || isMappingSheet) &&
+        Object.keys(candidate).length >= 2
+      ) {
         headerRowIndex = r;
         columns = candidate;
         break;
@@ -158,10 +177,13 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
       const get = (field: ColumnField): CellValue =>
         columns[field] !== undefined ? row[columns[field]!] : null;
 
-      const name = cellText(get("name")).trim();
-      if (!name) continue;
-
+      const name = cellText(get("name")).trim() || null;
       const supplierCode = cellText(get("supplierCode")).trim() || null;
+      const internalCode = cellText(get("internalCode")).trim() || null;
+      // A code-mapping sheet carries both codes and no description; a product
+      // row must have a name.
+      if (!name && !(supplierCode && internalCode)) continue;
+
       const priceRaw = get("price");
       const price = parsePrice(priceRaw);
       const unreadable = (raw: CellValue, parsed: number | null): boolean =>
@@ -177,7 +199,7 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
       const leadTimeDays = leadTimeParsed === null ? null : Math.max(0, Math.round(leadTimeParsed));
 
       let issue: string | null = null;
-      if (!supplierCode) issue = "No supplier code found in this row.";
+      if (!supplierCode && !internalCode) issue = "No supplier code found in this row.";
       else if (priceLooksUnreadable) issue = "Price could not be read as a number.";
       else if (unreadable(landingRaw, landingCost))
         issue = "Landing cost could not be read as a number.";
@@ -190,6 +212,7 @@ export function parseCatalogueWorkbook(sheets: SheetInput[]): CatalogueParseResu
         rowIndex: r,
         sheetName: sheet.name,
         supplierCode,
+        internalCode,
         name,
         unit: cellText(get("unit")).trim() || null,
         brand: cellText(get("brand")).trim() || null,
