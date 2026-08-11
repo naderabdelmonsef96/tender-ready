@@ -16,7 +16,7 @@ import {
   StatCard,
   TableScroll,
 } from "@/components/ui-blocks";
-import { WorkbenchStepper } from "@/components/workbench-stepper";
+import { GovernanceTracker } from "@/components/governance-tracker";
 import { useWorkspace } from "@/components/workspace-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,7 +283,7 @@ function Page() {
         }
       />
 
-      <WorkbenchStepper currentPath="/workbench/intake" />
+      <GovernanceTracker tenderId={tenderId} currentPath="/workbench/intake" />
 
       <Panel title={t("intake.selectTender")} className="mb-4">
         {listQuery.isPending ? (

@@ -16,7 +16,7 @@ import {
   StatCard,
   TableScroll,
 } from "@/components/ui-blocks";
-import { WorkbenchStepper } from "@/components/workbench-stepper";
+import { GovernanceTracker } from "@/components/governance-tracker";
 import { useWorkspace } from "@/components/workspace-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,7 +253,7 @@ function Page() {
   return (
     <div className="mx-auto w-full max-w-[1400px]">
       <PageHeader title={t("screens.commercialReview")} subtitle={t("quotation.subtitle")} />
-      <WorkbenchStepper currentPath="/workbench/review" />
+      <GovernanceTracker tenderId={tenderId} currentPath="/workbench/review" />
 
       <Panel title={t("intake.selectTender")} className="mb-4">
         {listQuery.isPending ? (

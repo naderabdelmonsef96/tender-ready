@@ -181,8 +181,7 @@ export const en = {
   },
   workflows: {
     title: "Workflow configuration",
-    subtitle:
-      "The seeded seven-stage maker-checker flow. Editing is part of the advanced workflow designer.",
+    subtitle: "Who approves each stage, the review window, and who currently holds each role.",
     order: "Order",
     stage: "Stage",
     approver: "Approver role",
@@ -190,6 +189,10 @@ export const en = {
     blocks: "Blocks release",
     yes: "Yes",
     no: "No",
+    saved: "Stage updated.",
+    invalidSla: "Enter an SLA of at least 1 hour.",
+    noOneAssigned: "No one assigned yet",
+    manageInUsers: "Manage in Users & roles",
   },
   approvals: {
     title: "Approval inbox",
@@ -234,6 +237,20 @@ export const en = {
     openMenu: "Open navigation",
     skipToContent: "Skip to main content",
     stageProgress: "Governed flow",
+    trackerNoTender: "Select a tender to see its governance progress.",
+  },
+
+  governance: {
+    passed: "Passed",
+    active: "Awaiting decision",
+    in_progress: "In progress",
+    rejected: "Changes requested",
+    pending: "Not started",
+    passedCount: "{{passed}} of {{total}} stages passed",
+    allPassed: "All stages passed",
+    rejectedCaption: "Changes requested on {{stage}}",
+    waitingCaption: "Waiting on {{name}} — {{stage}}",
+    inProgressCaption: "In progress — {{stage}}",
   },
 
   phase: {
@@ -795,7 +812,7 @@ export const ar: typeof en = {
   },
   workflows: {
     title: "إعداد مسار العمل",
-    subtitle: "مسار الحوكمة المكوّن من سبع مراحل. التعديل جزء من مصمم المسارات المتقدم.",
+    subtitle: "مين بيعتمد كل مرحلة، ومدة المراجعة، ومين شاغل كل رول دلوقتي.",
     order: "الترتيب",
     stage: "المرحلة",
     approver: "دور المعتمد",
@@ -803,6 +820,10 @@ export const ar: typeof en = {
     blocks: "يمنع الإصدار",
     yes: "نعم",
     no: "لا",
+    saved: "تم تحديث المرحلة.",
+    invalidSla: "أدخل زمن استجابة ساعة واحدة على الأقل.",
+    noOneAssigned: "محدش متعين لسه",
+    manageInUsers: "إدارة في المستخدمين والأدوار",
   },
   approvals: {
     title: "صندوق الموافقات",
@@ -847,6 +868,20 @@ export const ar: typeof en = {
     openMenu: "فتح القائمة",
     skipToContent: "الانتقال إلى المحتوى",
     stageProgress: "المسار المحكوم",
+    trackerNoTender: "اختر تندر عشان تشوف تقدمه في مسار الاعتماد.",
+  },
+
+  governance: {
+    passed: "تم الاعتماد",
+    active: "في انتظار القرار",
+    in_progress: "قيد التنفيذ",
+    rejected: "مطلوب تعديل",
+    pending: "لم تبدأ",
+    passedCount: "{{passed}} من {{total}} مراحل تم اعتمادها",
+    allPassed: "كل المراحل تم اعتمادها",
+    rejectedCaption: "مطلوب تعديل على {{stage}}",
+    waitingCaption: "في انتظار {{name}} — {{stage}}",
+    inProgressCaption: "قيد التنفيذ — {{stage}}",
   },
 
   phase: {

@@ -16,7 +16,7 @@ import {
   StatCard,
   TableScroll,
 } from "@/components/ui-blocks";
-import { WorkbenchStepper } from "@/components/workbench-stepper";
+import { GovernanceTracker } from "@/components/governance-tracker";
 import { useWorkspace } from "@/components/workspace-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -255,7 +255,7 @@ function Page() {
   return (
     <div className="mx-auto w-full max-w-[1400px]">
       <PageHeader title={t("screens.sourcing")} subtitle={t("sourcing.subtitle")} />
-      <WorkbenchStepper currentPath="/workbench/sourcing" />
+      <GovernanceTracker tenderId={tenderId} currentPath="/workbench/sourcing" />
 
       <Panel title={t("intake.selectTender")} className="mb-4">
         {listQuery.isPending ? (

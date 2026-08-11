@@ -195,6 +195,67 @@ export const updateMemberRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateWorkflowStage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    orgInput
+      .extend({
+        stageId: z.string().uuid(),
+        approverRole: z.enum([
+          "org_admin",
+          "proposal_engineer",
+          "technical_lead",
+          "product_manager",
+          "sourcing_manager",
+          "commercial_manager",
+          "finance_manager",
+          "signatory",
+          "viewer",
+        ]),
+        slaHours: z
+          .number()
+          .int()
+          .min(1)
+          .max(24 * 30),
+        blocksRelease: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, data.organizationId);
+
+    const { data: stage, error: readError } = await context.supabase
+      .from("workflow_stages")
+      .select("id, name, stage")
+      .eq("id", data.stageId)
+      .eq("organization_id", data.organizationId)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!stage) throw new Error("Stage not found in this organization");
+
+    const { error } = await context.supabase
+      .from("workflow_stages")
+      .update({
+        approver_role: data.approverRole,
+        sla_hours: data.slaHours,
+        blocks_release: data.blocksRelease,
+      })
+      .eq("id", data.stageId);
+    if (error) throw new Error(error.message);
+
+    await context.supabase.from("audit_events").insert({
+      organization_id: data.organizationId,
+      actor_id: context.userId,
+      action: "workflow_stage.updated",
+      object_type: "workflow_stage",
+      object_id: data.stageId,
+      is_material: true,
+      summary: `${stage.name}: approver ${data.approverRole}, SLA ${data.slaHours}h`,
+    });
+
+    return { ok: true };
+  });
+
 export const removeMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
