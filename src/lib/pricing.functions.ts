@@ -217,6 +217,14 @@ export const savePricingLine = createServerFn({ method: "POST" })
     if (item.error) throw new Error(item.error.message);
     if (!item.data) throw new Error("BOQ item not found");
 
+    const tender = await supabase
+      .from("tenders")
+      .select("currency")
+      .eq("organization_id", data.organizationId)
+      .eq("id", item.data.tender_id)
+      .maybeSingle();
+    if (tender.error) throw new Error(tender.error.message);
+
     const basis = await resolveCostBasis(supabase, data.organizationId, data.boqItemId);
     if (!basis) {
       throw new Error(
@@ -225,8 +233,16 @@ export const savePricingLine = createServerFn({ method: "POST" })
     }
 
     const qty = item.data.quantity != null ? new Decimal(item.data.quantity) : new Decimal(1);
-    const unitPrice = basis.costBasis.times(new Decimal(1).plus(data.marginPercent / 100));
+    const landingCost = basis.costBasis
+      .times(data.fxRate)
+      .plus(data.freightCharges)
+      .plus(data.localCharges);
+    const unitPrice = landingCost.dividedBy(new Decimal(1).minus(data.marginPercent / 100));
     const totalPrice = unitPrice.times(qty);
+    const landedCurrency =
+      data.fxRate === 1
+        ? basis.costBasisCurrency
+        : (tender.data?.currency ?? basis.costBasisCurrency);
 
     const existing = await supabase
       .from("pricing_lines")
@@ -246,9 +262,13 @@ export const savePricingLine = createServerFn({ method: "POST" })
       cost_basis: basis.costBasis.toNumber(),
       cost_basis_currency: basis.costBasisCurrency,
       cost_basis_source: basis.costBasisSource,
+      fx_rate: data.fxRate,
+      freight_charges: data.freightCharges,
+      local_charges: data.localCharges,
+      landing_cost: landingCost.toNumber(),
       margin_percent: data.marginPercent,
       unit_price: unitPrice.toNumber(),
-      unit_price_currency: basis.costBasisCurrency,
+      unit_price_currency: landedCurrency,
       total_price: totalPrice.toNumber(),
       note: data.note ?? null,
       decided_by: userId,

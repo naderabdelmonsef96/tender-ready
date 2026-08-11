@@ -1193,7 +1193,11 @@ export type Database = {
           created_by: string | null;
           decided_at: string | null;
           decided_by: string | null;
+          freight_charges: number;
+          fx_rate: number;
           id: string;
+          landing_cost: number;
+          local_charges: number;
           margin_basis: string;
           margin_percent: number;
           note: string | null;
@@ -1214,7 +1218,11 @@ export type Database = {
           created_by?: string | null;
           decided_at?: string | null;
           decided_by?: string | null;
+          freight_charges?: number;
+          fx_rate?: number;
           id?: string;
+          landing_cost?: number;
+          local_charges?: number;
           margin_basis?: string;
           margin_percent?: number;
           note?: string | null;
@@ -1235,7 +1243,11 @@ export type Database = {
           created_by?: string | null;
           decided_at?: string | null;
           decided_by?: string | null;
+          freight_charges?: number;
+          fx_rate?: number;
           id?: string;
+          landing_cost?: number;
+          local_charges?: number;
           margin_basis?: string;
           margin_percent?: number;
           note?: string | null;

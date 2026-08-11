@@ -74,6 +74,9 @@ function Page() {
 
   const [note, setNote] = useState("");
   const [marginByItem, setMarginByItem] = useState<Record<string, string>>({});
+  const [fxRateByItem, setFxRateByItem] = useState<Record<string, string>>({});
+  const [freightByItem, setFreightByItem] = useState<Record<string, string>>({});
+  const [localByItem, setLocalByItem] = useState<Record<string, string>>({});
 
   const listQuery = useQuery({
     queryKey: ["intake-tenders", activeOrganizationId],
@@ -207,15 +210,53 @@ function Page() {
     return existing ? String(existing.margin_percent) : "";
   }
 
+  function fxRateValue(item: BoardItem): string {
+    const draft = fxRateByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing ? String(existing.fx_rate) : "1";
+  }
+
+  function freightValue(item: BoardItem): string {
+    const draft = freightByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing ? String(existing.freight_charges) : "0";
+  }
+
+  function localValue(item: BoardItem): string {
+    const draft = localByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing ? String(existing.local_charges) : "0";
+  }
+
+  function landedCurrencyFor(basisCurrency: string, fxRate: number): string {
+    return fxRate === 1 ? basisCurrency : (data?.tender.currency ?? basisCurrency);
+  }
+
   function previewPrice(item: BoardItem, basis: { amount: string; currency: string }) {
     const marginRaw = marginValue(item);
     const margin = marginRaw.trim() === "" ? null : Number(marginRaw);
-    if (margin === null || Number.isNaN(margin)) return null;
+    const fxRate = Number(fxRateValue(item));
+    const freight = Number(freightValue(item));
+    const local = Number(localValue(item));
+    if (margin === null || Number.isNaN(margin) || margin < 0 || margin >= 100) return null;
+    if (!Number.isFinite(fxRate) || fxRate <= 0) return null;
+    if (!Number.isFinite(freight) || freight < 0 || !Number.isFinite(local) || local < 0) {
+      return null;
+    }
     try {
       const cost = new Decimal(basis.amount);
       const qty = item.quantity != null ? new Decimal(item.quantity) : new Decimal(1);
-      const unit = cost.times(new Decimal(1).plus(margin / 100));
-      return { unit, total: unit.times(qty) };
+      const landingCost = cost.times(fxRate).plus(freight).plus(local);
+      const unit = landingCost.dividedBy(new Decimal(1).minus(margin / 100));
+      return {
+        landingCost,
+        unit,
+        total: unit.times(qty),
+        currency: landedCurrencyFor(basis.currency, fxRate),
+      };
     } catch {
       return null;
     }
@@ -224,8 +265,19 @@ function Page() {
   function saveRow(item: BoardItem) {
     const marginRaw = marginValue(item);
     const margin = Number(marginRaw);
-    if (marginRaw.trim() === "" || Number.isNaN(margin) || margin < 0) {
+    if (marginRaw.trim() === "" || Number.isNaN(margin) || margin < 0 || margin >= 100) {
       toast.error(t("pricing.invalidMargin"));
+      return;
+    }
+    const fxRate = Number(fxRateValue(item));
+    if (!Number.isFinite(fxRate) || fxRate <= 0) {
+      toast.error(t("pricing.invalidFxRate"));
+      return;
+    }
+    const freight = Number(freightValue(item));
+    const local = Number(localValue(item));
+    if (!Number.isFinite(freight) || freight < 0 || !Number.isFinite(local) || local < 0) {
+      toast.error(t("pricing.invalidCharges"));
       return;
     }
     saveMutation.mutate({
@@ -233,6 +285,9 @@ function Page() {
         organizationId: activeOrganizationId ?? "",
         tenderId: tenderId ?? "",
         boqItemId: item.id,
+        fxRate,
+        freightCharges: freight,
+        localCharges: local,
         marginPercent: margin,
         version: lineByItem.get(item.id)?.version,
       },
@@ -345,6 +400,18 @@ function Page() {
                       {t("pricing.costBasis")}
                     </th>
                     <th scope="col" className="px-2 py-2 text-start">
+                      {t("pricing.conversionRate")}
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-start">
+                      {t("pricing.freightCharges")}
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-start">
+                      {t("pricing.localCharges")}
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-start">
+                      {t("pricing.landingCost")}
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-start">
                       {t("pricing.marginPercent")}
                     </th>
                     <th scope="col" className="px-2 py-2 text-start">
@@ -363,6 +430,7 @@ function Page() {
                     const basis = costBasisFor(item);
                     const existingLine = lineByItem.get(item.id);
                     const preview = basis ? previewPrice(item, basis) : null;
+                    const editable = !locked && canPrice && Boolean(basis);
                     return (
                       <tr key={item.id} className="border-b border-border/70 align-top">
                         <td className="max-w-[22rem] px-2 py-2">
@@ -392,6 +460,81 @@ function Page() {
                           )}
                         </td>
                         <td className="px-2 py-2">
+                          {editable ? (
+                            <Input
+                              aria-label={t("pricing.conversionRate")}
+                              className="h-8 w-24"
+                              inputMode="decimal"
+                              value={fxRateValue(item)}
+                              onChange={(event) =>
+                                setFxRateByItem((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {existingLine ? existingLine.fx_rate : "—"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
+                          {editable ? (
+                            <Input
+                              aria-label={t("pricing.freightCharges")}
+                              className="h-8 w-24"
+                              inputMode="decimal"
+                              value={freightValue(item)}
+                              onChange={(event) =>
+                                setFreightByItem((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {existingLine ? existingLine.freight_charges : "—"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
+                          {editable ? (
+                            <Input
+                              aria-label={t("pricing.localCharges")}
+                              className="h-8 w-24"
+                              inputMode="decimal"
+                              value={localValue(item)}
+                              onChange={(event) =>
+                                setLocalByItem((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {existingLine ? existingLine.local_charges : "—"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-2 text-xs tabular-nums" dir="ltr">
+                          {preview
+                            ? formatMoney(
+                                preview.landingCost.toString(),
+                                preview.currency,
+                                language,
+                              )
+                            : existingLine
+                              ? formatMoney(
+                                  existingLine.landing_cost,
+                                  existingLine.unit_price_currency,
+                                  language,
+                                )
+                              : "—"}
+                        </td>
+                        <td className="px-2 py-2">
                           {locked || !canPrice ? (
                             <span className="text-xs tabular-nums text-muted-foreground">
                               {existingLine ? `${existingLine.margin_percent}%` : "—"}
@@ -414,7 +557,7 @@ function Page() {
                         </td>
                         <td className="whitespace-nowrap px-2 py-2 text-xs tabular-nums" dir="ltr">
                           {preview
-                            ? formatMoney(preview.unit.toString(), basis!.currency, language)
+                            ? formatMoney(preview.unit.toString(), preview.currency, language)
                             : existingLine
                               ? formatMoney(
                                   existingLine.unit_price,
@@ -425,7 +568,7 @@ function Page() {
                         </td>
                         <td className="whitespace-nowrap px-2 py-2 text-xs tabular-nums" dir="ltr">
                           {preview
-                            ? formatMoney(preview.total.toString(), basis!.currency, language)
+                            ? formatMoney(preview.total.toString(), preview.currency, language)
                             : existingLine
                               ? formatMoney(
                                   existingLine.total_price,
