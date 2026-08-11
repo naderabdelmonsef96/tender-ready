@@ -1200,10 +1200,14 @@ export type Database = {
           decided_at: string | null
           decided_by: string | null
           freight_charges: number
+          freight_input: number
+          freight_mode: string
           fx_rate: number
           id: string
           landing_cost: number
           local_charges: number
+          local_input: number
+          local_mode: string
           margin_basis: string
           margin_percent: number
           note: string | null
@@ -1225,10 +1229,14 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           freight_charges?: number
+          freight_input?: number
+          freight_mode?: string
           fx_rate?: number
           id?: string
           landing_cost?: number
           local_charges?: number
+          local_input?: number
+          local_mode?: string
           margin_basis?: string
           margin_percent?: number
           note?: string | null
@@ -1250,10 +1258,14 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           freight_charges?: number
+          freight_input?: number
+          freight_mode?: string
           fx_rate?: number
           id?: string
           landing_cost?: number
           local_charges?: number
+          local_input?: number
+          local_mode?: string
           margin_basis?: string
           margin_percent?: number
           note?: string | null
