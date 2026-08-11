@@ -199,6 +199,7 @@ function Page() {
   const isReviewer =
     data?.myRole === "org_admin" ||
     data?.myRole === (data?.technicalStage?.approver_role ?? "technical_lead");
+  const isAdmin = data?.myRole === "org_admin";
   const activeTask = data?.activeTask ?? null;
   const selfSubmitted = activeTask?.submitted_by === data?.userId;
 
@@ -749,7 +750,32 @@ function Page() {
                   </>
                 )}
                 {activeTask && selfSubmitted && (
-                  <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
+                    {isAdmin && (
+                      <div className="flex flex-col items-start gap-1.5 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
+                        <p className="text-xs text-warning">{t("approvals.overrideWarning")}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-warning text-warning hover:bg-warning/10"
+                          disabled={decideMutation.isPending || !note.trim()}
+                          onClick={() =>
+                            decideMutation.mutate({
+                              data: {
+                                organizationId: activeOrganizationId ?? "",
+                                taskId: activeTask.id,
+                                decision: "approved",
+                                note: note || null,
+                              },
+                            })
+                          }
+                        >
+                          {t("approvals.override")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {openExceptions.length > 0 && !activeTask && (
                   <p className="text-xs text-warning">{t("register.noExceptions")}</p>

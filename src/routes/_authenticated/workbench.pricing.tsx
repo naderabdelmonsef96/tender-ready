@@ -163,6 +163,7 @@ function Page() {
   const isApprover =
     data?.myRole === "org_admin" ||
     data?.myRole === (data?.pricingStage?.approver_role ?? "commercial_manager");
+  const isAdmin = data?.myRole === "org_admin";
   const activeTask = data?.activeTask ?? null;
   const selfSubmitted = activeTask?.submitted_by === data?.userId;
   const locked = Boolean(activeTask);
@@ -510,7 +511,32 @@ function Page() {
                     </Button>
                   ))}
                 {activeTask && selfSubmitted && (
-                  <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
+                    {isAdmin && (
+                      <div className="flex flex-col items-start gap-1.5 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
+                        <p className="text-xs text-warning">{t("approvals.overrideWarning")}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-warning text-warning hover:bg-warning/10"
+                          disabled={stageMutation.isPending || !note.trim()}
+                          onClick={() =>
+                            stageMutation.mutate({
+                              data: {
+                                organizationId: activeOrganizationId ?? "",
+                                taskId: activeTask.id,
+                                decision: "approved",
+                                note: note || null,
+                              },
+                            })
+                          }
+                        >
+                          {t("approvals.override")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

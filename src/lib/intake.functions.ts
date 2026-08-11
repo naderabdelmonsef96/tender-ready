@@ -794,10 +794,26 @@ export const decideTechnicalReview = createServerFn({ method: "POST" })
       .maybeSingle();
     if (task.error) throw new Error(task.error.message);
     if (!task.data) throw new Error("Approval task not found");
-    if (task.data.submitted_by === userId) {
-      throw new Error(
-        "You submitted this register — maker-checker separation blocks self-approval.",
-      );
+
+    const isSelfSubmitted = task.data.submitted_by === userId;
+    let isOverride = false;
+    if (isSelfSubmitted) {
+      const membership = await supabase
+        .from("organization_memberships")
+        .select("role")
+        .eq("organization_id", data.organizationId)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle();
+      isOverride = membership.data?.role === "org_admin";
+      if (!isOverride) {
+        throw new Error(
+          "You submitted this register — maker-checker separation blocks self-approval.",
+        );
+      }
+      if (!data.note) {
+        throw new Error("An admin override needs a documented reason.");
+      }
     }
 
     const updated = await supabase
@@ -816,6 +832,7 @@ export const decideTechnicalReview = createServerFn({ method: "POST" })
       decision: data.decision,
       note: data.note ?? null,
       decided_by: userId,
+      is_override: isOverride,
     });
     if (decision.error) throw new Error(decision.error.message);
 
@@ -831,11 +848,11 @@ export const decideTechnicalReview = createServerFn({ method: "POST" })
     await writeAudit(supabase, {
       organizationId: data.organizationId,
       actorId: userId,
-      action: `technical_review.${data.decision}`,
+      action: `technical_review.${data.decision}${isOverride ? "_override" : ""}`,
       objectType: "requirements_register",
       objectId: task.data.tender_id,
       isMaterial: true,
-      summary: data.note ?? null,
+      summary: isOverride ? `ADMIN OVERRIDE: ${data.note}` : (data.note ?? null),
     });
 
     return { task: updated.data };

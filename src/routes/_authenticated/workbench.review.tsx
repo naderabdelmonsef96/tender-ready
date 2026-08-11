@@ -156,7 +156,10 @@ function Page() {
     data?.myRole === "finance_manager" ||
     data?.myRole === "signatory";
   const isApprover = data?.myRole === "org_admin" || data?.myRole === activeTask?.approver_role;
+  const isAdmin = data?.myRole === "org_admin";
   const selfSubmitted = activeTask?.submitted_by === data?.userId;
+  const canDecideRelease = isApprover && !selfSubmitted;
+  const canOverride = selfSubmitted && isAdmin;
 
   function submitReleaseDecision() {
     if (!activeTask || !data) return;
@@ -378,67 +381,69 @@ function Page() {
                   />
                 </div>
 
-                {activeTask && isApprover && !selfSubmitted && activeTask.stage === "release" && (
-                  <div className="grid gap-3 rounded-lg border border-border bg-surface p-3 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="release-currency">{t("quotation.currency")}</Label>
-                      <Input
-                        id="release-currency"
-                        className="mt-1 uppercase"
-                        maxLength={3}
-                        list="release-currency-options"
-                        value={releaseCurrency}
-                        onChange={(event) => setReleaseCurrencyDraft(event.target.value)}
-                      />
-                      <datalist id="release-currency-options">
-                        {Array.from(new Set([data.tender.currency, ...data.currenciesInUse])).map(
-                          (currency) => (
-                            <option key={currency} value={currency} />
-                          ),
-                        )}
-                      </datalist>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {t("quotation.currencyHint", {
-                          currencies: data.currenciesInUse.join(", "),
-                        })}
-                      </p>
+                {activeTask &&
+                  activeTask.stage === "release" &&
+                  (canDecideRelease || canOverride) && (
+                    <div className="grid gap-3 rounded-lg border border-border bg-surface p-3 sm:grid-cols-2">
+                      <div>
+                        <Label htmlFor="release-currency">{t("quotation.currency")}</Label>
+                        <Input
+                          id="release-currency"
+                          className="mt-1 uppercase"
+                          maxLength={3}
+                          list="release-currency-options"
+                          value={releaseCurrency}
+                          onChange={(event) => setReleaseCurrencyDraft(event.target.value)}
+                        />
+                        <datalist id="release-currency-options">
+                          {Array.from(new Set([data.tender.currency, ...data.currenciesInUse])).map(
+                            (currency) => (
+                              <option key={currency} value={currency} />
+                            ),
+                          )}
+                        </datalist>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("quotation.currencyHint", {
+                            currencies: data.currenciesInUse.join(", "),
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="release-vat">{t("quotation.vatPercent")}</Label>
+                        <Input
+                          id="release-vat"
+                          className="mt-1"
+                          inputMode="decimal"
+                          value={vatPercent}
+                          onChange={(event) => setVatPercent(event.target.value)}
+                        />
+                      </div>
+                      {data.currenciesInUse
+                        .filter((currency) => currency !== releaseCurrency)
+                        .map((currency) => (
+                          <div key={currency}>
+                            <Label htmlFor={`fx-${currency}`}>
+                              {t("quotation.fxRate", {
+                                currency,
+                                target: releaseCurrency || "?",
+                              })}
+                            </Label>
+                            <Input
+                              id={`fx-${currency}`}
+                              className="mt-1"
+                              inputMode="decimal"
+                              value={fxRates[currency] ?? ""}
+                              onChange={(event) =>
+                                setFxRates((current) => ({
+                                  ...current,
+                                  [currency]: event.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        ))}
                     </div>
-                    <div>
-                      <Label htmlFor="release-vat">{t("quotation.vatPercent")}</Label>
-                      <Input
-                        id="release-vat"
-                        className="mt-1"
-                        inputMode="decimal"
-                        value={vatPercent}
-                        onChange={(event) => setVatPercent(event.target.value)}
-                      />
-                    </div>
-                    {data.currenciesInUse
-                      .filter((currency) => currency !== releaseCurrency)
-                      .map((currency) => (
-                        <div key={currency}>
-                          <Label htmlFor={`fx-${currency}`}>
-                            {t("quotation.fxRate", {
-                              currency,
-                              target: releaseCurrency || "?",
-                            })}
-                          </Label>
-                          <Input
-                            id={`fx-${currency}`}
-                            className="mt-1"
-                            inputMode="decimal"
-                            value={fxRates[currency] ?? ""}
-                            onChange={(event) =>
-                              setFxRates((current) => ({
-                                ...current,
-                                [currency]: event.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                      ))}
-                  </div>
-                )}
+                  )}
 
                 <div className="flex flex-wrap gap-2">
                   {!activeTask &&
@@ -549,7 +554,38 @@ function Page() {
                     </>
                   )}
                   {activeTask && selfSubmitted && (
-                    <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
+                    <div className="flex flex-col gap-2">
+                      <p className="text-xs text-warning">{t("register.selfBlocked")}</p>
+                      {isAdmin && (
+                        <div className="flex flex-col items-start gap-1.5 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
+                          <p className="text-xs text-warning">{t("approvals.overrideWarning")}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-warning text-warning hover:bg-warning/10"
+                            disabled={
+                              (activeTask.stage === "release"
+                                ? releaseMutation.isPending
+                                : stageMutation.isPending) || !note.trim()
+                            }
+                            onClick={() =>
+                              activeTask.stage === "release"
+                                ? submitReleaseDecision()
+                                : stageMutation.mutate({
+                                    data: {
+                                      organizationId: activeOrganizationId ?? "",
+                                      taskId: activeTask.id,
+                                      decision: "approved",
+                                      note: note || null,
+                                    },
+                                  })
+                            }
+                          >
+                            {t("approvals.override")}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

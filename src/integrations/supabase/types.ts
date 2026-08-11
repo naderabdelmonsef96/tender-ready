@@ -14,6 +14,7 @@ export type Database = {
           decided_by: string;
           decision: Database["public"]["Enums"]["decision_state"];
           id: string;
+          is_override: boolean;
           note: string | null;
           organization_id: string;
           stage: Database["public"]["Enums"]["tender_stage"];
@@ -25,6 +26,7 @@ export type Database = {
           decided_by: string;
           decision: Database["public"]["Enums"]["decision_state"];
           id?: string;
+          is_override?: boolean;
           note?: string | null;
           organization_id: string;
           stage: Database["public"]["Enums"]["tender_stage"];
@@ -36,6 +38,7 @@ export type Database = {
           decided_by?: string;
           decision?: Database["public"]["Enums"]["decision_state"];
           id?: string;
+          is_override?: boolean;
           note?: string | null;
           organization_id?: string;
           stage?: Database["public"]["Enums"]["tender_stage"];

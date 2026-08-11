@@ -406,9 +406,6 @@ export const decideStageApproval = createServerFn({ method: "POST" })
       .maybeSingle();
     if (task.error) throw new Error(task.error.message);
     if (!task.data) throw new Error("Approval task not found");
-    if (task.data.submitted_by === userId) {
-      throw new Error("You submitted this — maker-checker separation blocks self-approval.");
-    }
 
     const membership = await supabase
       .from("organization_memberships")
@@ -418,7 +415,16 @@ export const decideStageApproval = createServerFn({ method: "POST" })
       .eq("status", "active")
       .maybeSingle();
     const role = membership.data?.role ?? null;
-    if (role !== "org_admin" && role !== task.data.approver_role) {
+
+    const isSelfSubmitted = task.data.submitted_by === userId;
+    const isOverride = isSelfSubmitted && role === "org_admin";
+    if (isSelfSubmitted && !isOverride) {
+      throw new Error("You submitted this — maker-checker separation blocks self-approval.");
+    }
+    if (isOverride && !data.note) {
+      throw new Error("An admin override needs a documented reason.");
+    }
+    if (!isSelfSubmitted && role !== "org_admin" && role !== task.data.approver_role) {
       throw new Error("Your role cannot decide this stage.");
     }
 
@@ -438,6 +444,7 @@ export const decideStageApproval = createServerFn({ method: "POST" })
       decision: data.decision,
       note: data.note ?? null,
       decided_by: userId,
+      is_override: isOverride,
     });
     if (decision.error) throw new Error(decision.error.message);
 
@@ -456,11 +463,11 @@ export const decideStageApproval = createServerFn({ method: "POST" })
     await writeAudit(supabase, {
       organizationId: data.organizationId,
       actorId: userId,
-      action: `${task.data.stage}_stage.${data.decision}`,
+      action: `${task.data.stage}_stage.${data.decision}${isOverride ? "_override" : ""}`,
       objectType: "approval_task",
       objectId: data.taskId,
       isMaterial: true,
-      summary: data.note ?? null,
+      summary: isOverride ? `ADMIN OVERRIDE: ${data.note}` : (data.note ?? null),
     });
 
     return { task: updated.data };

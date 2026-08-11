@@ -192,6 +192,10 @@ export const en = {
       "Maker-checker separation is enforced on the server: no one can approve an object they created or materially edited.",
     empty: "Nothing is waiting for a decision right now.",
     open: "Open tender",
+    override: "Override & approve",
+    overrideWarning:
+      "This bypasses the normal two-person check. Only organization admins can do this, and it is always logged as an override.",
+    overrideReasonRequired: "An admin override needs a documented reason in the note above.",
   },
   audit: {
     title: "Audit trail",
@@ -753,6 +757,10 @@ export const ar: typeof en = {
       "فصل المُنشئ عن المراجع مفروض على الخادم: لا يمكن لأي شخص اعتماد عنصر أنشأه أو عدّله جوهريًا.",
     empty: "لا يوجد ما ينتظر قرارًا حاليًا.",
     open: "فتح العطاء",
+    override: "تجاوز واعتماد",
+    overrideWarning:
+      "هذا يتجاوز فصل المُنشئ عن المراجع المعتاد. متاح فقط لمسؤولي المؤسسة، ويُسجَّل دائمًا كتجاوز.",
+    overrideReasonRequired: "تجاوز المسؤول يتطلب سببًا موثقًا في الملاحظة أعلاه.",
   },
   audit: {
     title: "سجل التتبع",

@@ -520,9 +520,6 @@ export const releaseQuotation = createServerFn({ method: "POST" })
     if (task.data.stage !== "release") {
       throw new Error("Only the release-stage task generates a quotation.");
     }
-    if (task.data.submitted_by === userId) {
-      throw new Error("You submitted this — maker-checker separation blocks self-approval.");
-    }
 
     const membership = await supabase
       .from("organization_memberships")
@@ -532,7 +529,16 @@ export const releaseQuotation = createServerFn({ method: "POST" })
       .eq("status", "active")
       .maybeSingle();
     const role = membership.data?.role ?? null;
-    if (role !== "org_admin" && role !== task.data.approver_role) {
+
+    const isSelfSubmitted = task.data.submitted_by === userId;
+    const isOverride = isSelfSubmitted && role === "org_admin";
+    if (isSelfSubmitted && !isOverride) {
+      throw new Error("You submitted this — maker-checker separation blocks self-approval.");
+    }
+    if (isOverride && !data.note) {
+      throw new Error("An admin override needs a documented reason.");
+    }
+    if (!isSelfSubmitted && role !== "org_admin" && role !== task.data.approver_role) {
       throw new Error("Your role cannot decide this stage.");
     }
 
@@ -647,6 +653,7 @@ export const releaseQuotation = createServerFn({ method: "POST" })
       decision: "approved",
       note: data.note ?? null,
       decided_by: userId,
+      is_override: isOverride,
     });
     if (decision.error) throw new Error(decision.error.message);
 
@@ -659,12 +666,14 @@ export const releaseQuotation = createServerFn({ method: "POST" })
     await writeAudit(supabase, {
       organizationId: data.organizationId,
       actorId: userId,
-      action: "quotation.released",
+      action: isOverride ? "quotation.released_override" : "quotation.released",
       objectType: "quotation",
       objectId: quotation.data.id,
       objectVersion: quotation.data.version,
       isMaterial: true,
-      summary: `${quotationNumber} released — ${data.currency} ${total.toFixed(2)}`,
+      summary: isOverride
+        ? `ADMIN OVERRIDE: ${data.note} — ${quotationNumber} released — ${data.currency} ${total.toFixed(2)}`
+        : `${quotationNumber} released — ${data.currency} ${total.toFixed(2)}`,
     });
 
     return { quotation: quotation.data };
