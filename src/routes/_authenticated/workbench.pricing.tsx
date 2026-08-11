@@ -182,6 +182,15 @@ function Page() {
         source: t("pricing.sourceLandingCost"),
       };
     }
+    if (route.route === "import") {
+      const product = route.product_id ? productById.get(route.product_id) : null;
+      if (!product?.base_cost) return null;
+      return {
+        amount: String(product.base_cost),
+        currency: product.currency,
+        source: t("pricing.sourceSupplierPrice"),
+      };
+    }
     const quote = route.supplier_quote_id ? quoteById.get(route.supplier_quote_id) : null;
     if (!quote?.unit_cost) return null;
     return {

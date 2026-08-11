@@ -16,7 +16,7 @@ function formatQuotationNumber(pattern: string, year: number, seq: number): stri
 type CostBasis = {
   costBasis: Decimal;
   costBasisCurrency: string;
-  costBasisSource: "landing_cost" | "supplier_quote";
+  costBasisSource: "landing_cost" | "supplier_price" | "supplier_quote";
 } | null;
 
 export const getPricingBoard = createServerFn({ method: "GET" })
@@ -84,17 +84,18 @@ export const getPricingBoard = createServerFn({ method: "GET" })
     if (lines.error) throw new Error(lines.error.message);
 
     // Cost basis for ex-stock routes comes from the matched product's landing
-    // cost; every other route reads the accepted supplier quote. Never typed.
+    // cost; import routes read that same product's supplier price list entry;
+    // every other route reads the accepted supplier quote. Never typed.
     const routeByItem = new Map((routes.data ?? []).map((r) => [r.boq_item_id, r]));
     const quoteById = new Map((quotes.data ?? []).map((q) => [q.id, q]));
     const productIds = (routes.data ?? [])
-      .filter((r) => r.route === "ex_stock" && r.product_id)
+      .filter((r) => (r.route === "ex_stock" || r.route === "import") && r.product_id)
       .map((r) => r.product_id as string);
     const products =
       productIds.length > 0
         ? await supabase
             .from("catalogue_products")
-            .select("id, landing_cost, landing_cost_currency, currency")
+            .select("id, landing_cost, landing_cost_currency, base_cost, currency")
             .eq("organization_id", data.organizationId)
             .in("id", productIds)
         : { data: [], error: null };
@@ -125,6 +126,10 @@ export const getPricingBoard = createServerFn({ method: "GET" })
         if (route.route === "ex_stock") {
           const product = route.product_id ? productById.get(route.product_id) : null;
           return !product?.landing_cost;
+        }
+        if (route.route === "import") {
+          const product = route.product_id ? productById.get(route.product_id) : null;
+          return !product?.base_cost;
         }
         const quote = route.supplier_quote_id ? quoteById.get(route.supplier_quote_id) : null;
         return !quote?.unit_cost;
@@ -160,6 +165,23 @@ async function resolveCostBasis(
       costBasis: new Decimal(product.data.landing_cost),
       costBasisCurrency: product.data.landing_cost_currency ?? product.data.currency,
       costBasisSource: "landing_cost",
+    };
+  }
+
+  if (route.data.route === "import") {
+    if (!route.data.product_id) return null;
+    const product = await supabase
+      .from("catalogue_products")
+      .select("base_cost, currency")
+      .eq("organization_id", organizationId)
+      .eq("id", route.data.product_id)
+      .maybeSingle();
+    if (product.error) throw new Error(product.error.message);
+    if (!product.data?.base_cost) return null;
+    return {
+      costBasis: new Decimal(product.data.base_cost),
+      costBasisCurrency: product.data.currency,
+      costBasisSource: "supplier_price",
     };
   }
 
