@@ -3,6 +3,7 @@ import {
   Boxes,
   ClipboardList,
   Coins,
+  FileSignature,
   FileSpreadsheet,
   FileText,
   History,
@@ -73,6 +74,11 @@ export const navGroups: NavGroup[] = [
       { to: "/settings/company", labelKey: "nav.company", icon: FileText },
       { to: "/settings/users", labelKey: "nav.users", icon: Users },
       { to: "/settings/catalogue", labelKey: "nav.catalogues", icon: Boxes },
+      {
+        to: "/settings/quotation-template",
+        labelKey: "nav.quotationTemplate",
+        icon: FileSignature,
+      },
 
       { to: "/admin/workflows", labelKey: "nav.workflows", icon: Workflow },
     ],

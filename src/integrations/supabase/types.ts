@@ -561,6 +561,7 @@ export type Database = {
           name_ar: string | null;
           organization_id: string;
           phone: string | null;
+          tax_no: string | null;
           updated_at: string;
         };
         Insert: {
@@ -575,6 +576,7 @@ export type Database = {
           name_ar?: string | null;
           organization_id: string;
           phone?: string | null;
+          tax_no?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -589,6 +591,7 @@ export type Database = {
           name_ar?: string | null;
           organization_id?: string;
           phone?: string | null;
+          tax_no?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -1467,9 +1470,15 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           currency: string;
+          delivery_terms: string | null;
+          discount: number;
           fx_rates: Json;
           id: string;
+          incoterms: string | null;
+          notes_assumptions: string | null;
           organization_id: string;
+          other_charges: number;
+          payment_terms: string | null;
           quotation_number: string;
           released_at: string | null;
           released_by: string | null;
@@ -1481,14 +1490,21 @@ export type Database = {
           valid_until: string | null;
           vat_amount: number;
           version: number;
+          warranty: string | null;
         };
         Insert: {
           created_at?: string;
           created_by?: string | null;
           currency: string;
+          delivery_terms?: string | null;
+          discount?: number;
           fx_rates?: Json;
           id?: string;
+          incoterms?: string | null;
+          notes_assumptions?: string | null;
           organization_id: string;
+          other_charges?: number;
+          payment_terms?: string | null;
           quotation_number: string;
           released_at?: string | null;
           released_by?: string | null;
@@ -1500,14 +1516,21 @@ export type Database = {
           valid_until?: string | null;
           vat_amount?: number;
           version?: number;
+          warranty?: string | null;
         };
         Update: {
           created_at?: string;
           created_by?: string | null;
           currency?: string;
+          delivery_terms?: string | null;
+          discount?: number;
           fx_rates?: Json;
           id?: string;
+          incoterms?: string | null;
+          notes_assumptions?: string | null;
           organization_id?: string;
+          other_charges?: number;
+          payment_terms?: string | null;
           quotation_number?: string;
           released_at?: string | null;
           released_by?: string | null;
@@ -1519,6 +1542,7 @@ export type Database = {
           valid_until?: string | null;
           vat_amount?: number;
           version?: number;
+          warranty?: string | null;
         };
         Relationships: [
           {

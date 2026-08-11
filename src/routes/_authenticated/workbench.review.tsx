@@ -31,6 +31,7 @@ import {
   submitFinanceForApproval,
   submitReleaseForApproval,
 } from "@/lib/pricing.functions";
+import { generateQuotationDocument } from "@/lib/quotation-document.functions";
 
 const searchSchema = z.object({ tender: z.string().uuid().optional() });
 
@@ -71,11 +72,19 @@ function Page() {
   const submitRelease = useServerFn(submitReleaseForApproval);
   const decideStage = useServerFn(decideStageApproval);
   const release = useServerFn(releaseQuotation);
+  const generateDocument = useServerFn(generateQuotationDocument);
 
   const [note, setNote] = useState("");
   const [releaseCurrencyDraft, setReleaseCurrencyDraft] = useState("");
   const [vatPercent, setVatPercent] = useState("0");
   const [fxRates, setFxRates] = useState<Record<string, string>>({});
+  const [discount, setDiscount] = useState("0");
+  const [otherCharges, setOtherCharges] = useState("0");
+  const [paymentTerms, setPaymentTerms] = useState("");
+  const [deliveryTerms, setDeliveryTerms] = useState("");
+  const [warranty, setWarranty] = useState("");
+  const [incoterms, setIncoterms] = useState("");
+  const [notesAssumptions, setNotesAssumptions] = useState("");
 
   const listQuery = useQuery({
     queryKey: ["intake-tenders", activeOrganizationId],
@@ -107,6 +116,13 @@ function Page() {
     setReleaseCurrencyDraft("");
     setVatPercent("0");
     setFxRates({});
+    setDiscount("0");
+    setOtherCharges("0");
+    setPaymentTerms("");
+    setDeliveryTerms("");
+    setWarranty("");
+    setIncoterms("");
+    setNotesAssumptions("");
   };
 
   const submitFinanceMutation = useMutation({
@@ -149,6 +165,25 @@ function Page() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const downloadDocumentMutation = useMutation({
+    mutationFn: generateDocument,
+    onSuccess: (result) => {
+      const bytes = atob(result.base64);
+      const buffer = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = result.fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const activeTask = data?.activeTask ?? null;
   const canManage =
     data?.myRole === "org_admin" ||
@@ -166,6 +201,16 @@ function Page() {
     const vat = Number(vatPercent);
     if (vatPercent.trim() === "" || Number.isNaN(vat) || vat < 0 || vat > 100) {
       toast.error(t("quotation.invalidVat"));
+      return;
+    }
+    const discountValue = Number(discount);
+    const otherChargesValue = Number(otherCharges);
+    if (!Number.isFinite(discountValue) || discountValue < 0) {
+      toast.error(t("quotation.invalidDiscount"));
+      return;
+    }
+    if (!Number.isFinite(otherChargesValue) || otherChargesValue < 0) {
+      toast.error(t("quotation.invalidOtherCharges"));
       return;
     }
     const missing = data.currenciesInUse.filter(
@@ -187,6 +232,13 @@ function Page() {
         currency: releaseCurrency.trim().toUpperCase(),
         fxRates: rates,
         vatPercent: vat,
+        discount: discountValue,
+        otherCharges: otherChargesValue,
+        paymentTerms: paymentTerms.trim() || null,
+        deliveryTerms: deliveryTerms.trim() || null,
+        warranty: warranty.trim() || null,
+        incoterms: incoterms.trim() || null,
+        notesAssumptions: notesAssumptions.trim() || null,
         note: note || null,
       },
     });
@@ -272,6 +324,26 @@ function Page() {
             <Panel
               title={t("quotation.quotationNumber")}
               description={data.quotation.quotation_number}
+              actions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={downloadDocumentMutation.isPending}
+                  onClick={() =>
+                    downloadDocumentMutation.mutate({
+                      data: {
+                        organizationId: activeOrganizationId ?? "",
+                        tenderId: tenderId ?? "",
+                      },
+                    })
+                  }
+                >
+                  {downloadDocumentMutation.isPending
+                    ? t("common.saving")
+                    : t("quotation.downloadDocument")}
+                </Button>
+              }
             >
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
@@ -279,8 +351,20 @@ function Page() {
                   value={formatMoney(data.quotation.subtotal, data.quotation.currency, language)}
                 />
                 <StatCard
+                  label={t("quotation.discount")}
+                  value={formatMoney(data.quotation.discount, data.quotation.currency, language)}
+                />
+                <StatCard
                   label={t("quotation.vatAmount")}
                   value={formatMoney(data.quotation.vat_amount, data.quotation.currency, language)}
+                />
+                <StatCard
+                  label={t("quotation.otherCharges")}
+                  value={formatMoney(
+                    data.quotation.other_charges,
+                    data.quotation.currency,
+                    language,
+                  )}
                 />
                 <StatCard
                   label={t("quotation.total")}
@@ -292,6 +376,48 @@ function Page() {
                   value={data.quotation.valid_until ?? "—"}
                 />
               </div>
+              {(data.quotation.payment_terms ||
+                data.quotation.delivery_terms ||
+                data.quotation.warranty ||
+                data.quotation.incoterms ||
+                data.quotation.notes_assumptions) && (
+                <div className="mt-4 grid gap-3 rounded-lg border border-border bg-surface p-3 text-sm sm:grid-cols-2">
+                  {data.quotation.payment_terms && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("quotation.paymentTerms")}</p>
+                      <p>{data.quotation.payment_terms}</p>
+                    </div>
+                  )}
+                  {data.quotation.delivery_terms && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {t("quotation.deliveryTerms")}
+                      </p>
+                      <p>{data.quotation.delivery_terms}</p>
+                    </div>
+                  )}
+                  {data.quotation.warranty && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("quotation.warranty")}</p>
+                      <p>{data.quotation.warranty}</p>
+                    </div>
+                  )}
+                  {data.quotation.incoterms && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("quotation.incoterms")}</p>
+                      <p>{data.quotation.incoterms}</p>
+                    </div>
+                  )}
+                  {data.quotation.notes_assumptions && (
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-muted-foreground">
+                        {t("quotation.notesAssumptions")}
+                      </p>
+                      <p className="whitespace-pre-line">{data.quotation.notes_assumptions}</p>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mt-4">
                 {data.quotationLines.length === 0 ? (
                   <EmptyState message={t("quotation.noLines")} />
@@ -442,6 +568,79 @@ function Page() {
                             />
                           </div>
                         ))}
+                      <div>
+                        <Label htmlFor="release-discount">{t("quotation.discount")}</Label>
+                        <Input
+                          id="release-discount"
+                          className="mt-1"
+                          inputMode="decimal"
+                          value={discount}
+                          onChange={(event) => setDiscount(event.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="release-other-charges">{t("quotation.otherCharges")}</Label>
+                        <Input
+                          id="release-other-charges"
+                          className="mt-1"
+                          inputMode="decimal"
+                          value={otherCharges}
+                          onChange={(event) => setOtherCharges(event.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="release-payment-terms">{t("quotation.paymentTerms")}</Label>
+                        <Input
+                          id="release-payment-terms"
+                          className="mt-1"
+                          value={paymentTerms}
+                          onChange={(event) => setPaymentTerms(event.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="release-delivery-terms">
+                          {t("quotation.deliveryTerms")}
+                        </Label>
+                        <Input
+                          id="release-delivery-terms"
+                          className="mt-1"
+                          value={deliveryTerms}
+                          onChange={(event) => setDeliveryTerms(event.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="release-warranty">{t("quotation.warranty")}</Label>
+                        <Input
+                          id="release-warranty"
+                          className="mt-1"
+                          value={warranty}
+                          onChange={(event) => setWarranty(event.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="release-incoterms">{t("quotation.incoterms")}</Label>
+                        <Input
+                          id="release-incoterms"
+                          className="mt-1"
+                          value={incoterms}
+                          onChange={(event) => setIncoterms(event.target.value)}
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="release-notes-assumptions">
+                          {t("quotation.notesAssumptions")}
+                        </Label>
+                        <Textarea
+                          id="release-notes-assumptions"
+                          className="mt-1"
+                          rows={3}
+                          value={notesAssumptions}
+                          onChange={(event) => setNotesAssumptions(event.target.value)}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("quotation.notesAssumptionsHint")}
+                        </p>
+                      </div>
                     </div>
                   )}
 

@@ -23,6 +23,13 @@ export const releaseQuotationSchema = z.object({
   currency: z.string().trim().length(3),
   fxRates: z.record(z.string(), z.number().positive()).optional(),
   vatPercent: z.number().min(0).max(100).default(0),
+  discount: z.number().min(0).default(0),
+  otherCharges: z.number().min(0).default(0),
+  paymentTerms: z.string().trim().max(500).optional().nullable(),
+  deliveryTerms: z.string().trim().max(500).optional().nullable(),
+  warranty: z.string().trim().max(500).optional().nullable(),
+  incoterms: z.string().trim().max(200).optional().nullable(),
+  notesAssumptions: z.string().trim().max(2000).optional().nullable(),
   note: z.string().trim().max(1000).optional().nullable(),
 });
 

@@ -573,8 +573,11 @@ export const releaseQuotation = createServerFn({ method: "POST" })
       };
     });
 
-    const vatAmount = subtotal.times(data.vatPercent / 100);
-    const total = subtotal.plus(vatAmount);
+    const discount = new Decimal(data.discount ?? 0);
+    const otherCharges = new Decimal(data.otherCharges ?? 0);
+    const taxable = subtotal.minus(discount);
+    const vatAmount = taxable.times(data.vatPercent / 100);
+    const total = taxable.plus(vatAmount).plus(otherCharges);
 
     const year = new Date().getFullYear();
     const countThisYear = await supabase
@@ -596,6 +599,8 @@ export const releaseQuotation = createServerFn({ method: "POST" })
         currency: data.currency,
         fx_rates: fxRates as never,
         subtotal: subtotal.toNumber(),
+        discount: discount.toNumber(),
+        other_charges: otherCharges.toNumber(),
         vat_amount: vatAmount.toNumber(),
         total: total.toNumber(),
         valid_until: validUntil,
@@ -603,6 +608,11 @@ export const releaseQuotation = createServerFn({ method: "POST" })
         released_by: userId,
         released_at: new Date().toISOString(),
         created_by: userId,
+        payment_terms: data.paymentTerms ?? null,
+        delivery_terms: data.deliveryTerms ?? null,
+        warranty: data.warranty ?? null,
+        incoterms: data.incoterms ?? null,
+        notes_assumptions: data.notesAssumptions ?? null,
       })
       .select("*")
       .single();

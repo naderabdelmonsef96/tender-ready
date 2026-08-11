@@ -24,6 +24,7 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as AuthenticatedAdminWorkflowsRouteImport } from './routes/_authenticated/admin.workflows'
 import { Route as AuthenticatedSettingsCatalogueRouteImport } from './routes/_authenticated/settings.catalogue'
 import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_authenticated/settings.company'
+import { Route as AuthenticatedSettingsQuotationTemplateRouteImport } from './routes/_authenticated/settings.quotation-template'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
 import { Route as AuthenticatedWorkbenchIntakeRouteImport } from './routes/_authenticated/workbench.intake'
 import { Route as AuthenticatedWorkbenchPortfolioRouteImport } from './routes/_authenticated/workbench.portfolio'
@@ -112,6 +113,12 @@ const AuthenticatedSettingsCompanyRoute =
     path: '/settings/company',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsQuotationTemplateRoute =
+  AuthenticatedSettingsQuotationTemplateRouteImport.update({
+    id: '/settings/quotation-template',
+    path: '/settings/quotation-template',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsUsersRoute =
   AuthenticatedSettingsUsersRouteImport.update({
     id: '/settings/users',
@@ -170,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
   '/settings/catalogue': typeof AuthenticatedSettingsCatalogueRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
+  '/settings/quotation-template': typeof AuthenticatedSettingsQuotationTemplateRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
   '/workbench/portfolio': typeof AuthenticatedWorkbenchPortfolioRoute
@@ -193,6 +201,7 @@ export interface FileRoutesByTo {
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
   '/settings/catalogue': typeof AuthenticatedSettingsCatalogueRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
+  '/settings/quotation-template': typeof AuthenticatedSettingsQuotationTemplateRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
   '/workbench/portfolio': typeof AuthenticatedWorkbenchPortfolioRoute
@@ -218,6 +227,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/workflows': typeof AuthenticatedAdminWorkflowsRoute
   '/_authenticated/settings/catalogue': typeof AuthenticatedSettingsCatalogueRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
+  '/_authenticated/settings/quotation-template': typeof AuthenticatedSettingsQuotationTemplateRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/workbench/intake': typeof AuthenticatedWorkbenchIntakeRoute
   '/_authenticated/workbench/portfolio': typeof AuthenticatedWorkbenchPortfolioRoute
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/admin/workflows'
     | '/settings/catalogue'
     | '/settings/company'
+    | '/settings/quotation-template'
     | '/settings/users'
     | '/workbench/intake'
     | '/workbench/portfolio'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/admin/workflows'
     | '/settings/catalogue'
     | '/settings/company'
+    | '/settings/quotation-template'
     | '/settings/users'
     | '/workbench/intake'
     | '/workbench/portfolio'
@@ -290,6 +302,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workflows'
     | '/_authenticated/settings/catalogue'
     | '/_authenticated/settings/company'
+    | '/_authenticated/settings/quotation-template'
     | '/_authenticated/settings/users'
     | '/_authenticated/workbench/intake'
     | '/_authenticated/workbench/portfolio'
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCompanyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/quotation-template': {
+      id: '/_authenticated/settings/quotation-template'
+      path: '/settings/quotation-template'
+      fullPath: '/settings/quotation-template'
+      preLoaderRoute: typeof AuthenticatedSettingsQuotationTemplateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/users': {
       id: '/_authenticated/settings/users'
       path: '/settings/users'
@@ -477,6 +497,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminWorkflowsRoute: typeof AuthenticatedAdminWorkflowsRoute
   AuthenticatedSettingsCatalogueRoute: typeof AuthenticatedSettingsCatalogueRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
+  AuthenticatedSettingsQuotationTemplateRoute: typeof AuthenticatedSettingsQuotationTemplateRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedWorkbenchIntakeRoute: typeof AuthenticatedWorkbenchIntakeRoute
   AuthenticatedWorkbenchPortfolioRoute: typeof AuthenticatedWorkbenchPortfolioRoute
@@ -493,6 +514,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminWorkflowsRoute: AuthenticatedAdminWorkflowsRoute,
   AuthenticatedSettingsCatalogueRoute: AuthenticatedSettingsCatalogueRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
+  AuthenticatedSettingsQuotationTemplateRoute:
+    AuthenticatedSettingsQuotationTemplateRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedWorkbenchIntakeRoute: AuthenticatedWorkbenchIntakeRoute,
   AuthenticatedWorkbenchPortfolioRoute: AuthenticatedWorkbenchPortfolioRoute,
