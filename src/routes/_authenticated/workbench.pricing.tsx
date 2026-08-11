@@ -302,15 +302,12 @@ function Page() {
     const costRaw = costAmountValue(item);
     const currency = costCurrencyValue(item);
     const cost = costRaw.trim() === "" ? null : Number(costRaw);
-    const marginRaw = marginValue(item);
-    const margin = marginRaw.trim() === "" ? null : Number(marginRaw);
     const fxRate = Number(fxRateValue(item));
     const freightRaw = Number(freightValue(item));
     const localRaw = Number(localValue(item));
     if (cost === null || Number.isNaN(cost) || cost <= 0 || currency.trim().length !== 3) {
       return null;
     }
-    if (margin === null || Number.isNaN(margin) || margin < 0 || margin >= 100) return null;
     if (!Number.isFinite(fxRate) || fxRate <= 0) return null;
     if (!Number.isFinite(freightRaw) || freightRaw < 0) return null;
     if (!Number.isFinite(localRaw) || localRaw < 0) return null;
@@ -327,12 +324,20 @@ function Page() {
           ? converted.times(localRaw).dividedBy(100)
           : new Decimal(localRaw);
       const landingCost = converted.plus(freightAmount).plus(localAmount);
+      const landedCurrency = landedCurrencyFor(currency, fxRate);
+
+      const marginRaw = marginValue(item);
+      const margin = marginRaw.trim() === "" ? null : Number(marginRaw);
+      if (margin === null || Number.isNaN(margin) || margin < 0 || margin >= 100) {
+        return { landingCost, unit: null, total: null, currency: landedCurrency };
+      }
+
       const unit = landingCost.dividedBy(new Decimal(1).minus(margin / 100));
       return {
         landingCost,
         unit,
         total: unit.times(qty),
-        currency: landedCurrencyFor(currency, fxRate),
+        currency: landedCurrency,
       };
     } catch {
       return null;
@@ -715,7 +720,7 @@ function Page() {
                           )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-2 text-xs tabular-nums" dir="ltr">
-                          {preview
+                          {preview?.unit
                             ? formatMoney(preview.unit.toString(), preview.currency, language)
                             : existingLine
                               ? formatMoney(
@@ -726,7 +731,7 @@ function Page() {
                               : "—"}
                         </td>
                         <td className="whitespace-nowrap px-2 py-2 text-xs tabular-nums" dir="ltr">
-                          {preview
+                          {preview?.total
                             ? formatMoney(preview.total.toString(), preview.currency, language)
                             : existingLine
                               ? formatMoney(
