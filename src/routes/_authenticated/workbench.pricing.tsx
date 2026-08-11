@@ -77,6 +77,12 @@ function Page() {
   const [fxRateByItem, setFxRateByItem] = useState<Record<string, string>>({});
   const [freightByItem, setFreightByItem] = useState<Record<string, string>>({});
   const [localByItem, setLocalByItem] = useState<Record<string, string>>({});
+  const [costAmountByItem, setCostAmountByItem] = useState<Record<string, string>>({});
+  const [costCurrencyByItem, setCostCurrencyByItem] = useState<Record<string, string>>({});
+  const [freightModeByItem, setFreightModeByItem] = useState<Record<string, "value" | "percent">>(
+    {},
+  );
+  const [localModeByItem, setLocalModeByItem] = useState<Record<string, "value" | "percent">>({});
 
   const listQuery = useQuery({
     queryKey: ["intake-tenders", activeOrganizationId],
@@ -171,9 +177,11 @@ function Page() {
   const selfSubmitted = activeTask?.submitted_by === data?.userId;
   const locked = Boolean(activeTask);
 
-  function costBasisFor(
+  type CostBasisSource = "landing_cost" | "supplier_price" | "supplier_quote";
+
+  function autoCostBasisFor(
     item: BoardItem,
-  ): { amount: string; currency: string; source: string } | null {
+  ): { amount: string; currency: string; sourceKey: CostBasisSource } | null {
     const route = routeByItem.get(item.id);
     if (!route) return null;
     if (route.route === "ex_stock") {
@@ -182,7 +190,7 @@ function Page() {
       return {
         amount: String(product.landing_cost),
         currency: product.landing_cost_currency ?? product.currency,
-        source: t("pricing.sourceLandingCost"),
+        sourceKey: "landing_cost",
       };
     }
     if (route.route === "import") {
@@ -191,7 +199,7 @@ function Page() {
       return {
         amount: String(product.base_cost),
         currency: product.currency,
-        source: t("pricing.sourceSupplierPrice"),
+        sourceKey: "supplier_price",
       };
     }
     const quote = route.supplier_quote_id ? quoteById.get(route.supplier_quote_id) : null;
@@ -199,8 +207,49 @@ function Page() {
     return {
       amount: String(quote.unit_cost),
       currency: quote.currency,
-      source: t("pricing.sourceSupplierQuote"),
+      sourceKey: "supplier_quote",
     };
+  }
+
+  function sourceLabel(key: CostBasisSource | "manual"): string {
+    switch (key) {
+      case "landing_cost":
+        return t("pricing.sourceLandingCost");
+      case "supplier_price":
+        return t("pricing.sourceSupplierPrice");
+      case "supplier_quote":
+        return t("pricing.sourceSupplierQuote");
+      default:
+        return t("pricing.sourceManual");
+    }
+  }
+
+  function costAmountValue(item: BoardItem): string {
+    const draft = costAmountByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    if (existing) return String(existing.cost_basis);
+    return autoCostBasisFor(item)?.amount ?? "";
+  }
+
+  function costCurrencyValue(item: BoardItem): string {
+    const draft = costCurrencyByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    if (existing) return existing.cost_basis_currency;
+    return autoCostBasisFor(item)?.currency ?? data?.tender.currency ?? "";
+  }
+
+  function costSourceFor(item: BoardItem): CostBasisSource | "manual" {
+    const auto = autoCostBasisFor(item);
+    if (
+      auto &&
+      auto.amount === costAmountValue(item) &&
+      auto.currency === costCurrencyValue(item)
+    ) {
+      return auto.sourceKey;
+    }
+    return "manual";
   }
 
   function marginValue(item: BoardItem): string {
@@ -221,41 +270,69 @@ function Page() {
     const draft = freightByItem[item.id];
     if (draft !== undefined) return draft;
     const existing = lineByItem.get(item.id);
-    return existing ? String(existing.freight_charges) : "0";
+    return existing ? String(existing.freight_input) : "0";
   }
 
   function localValue(item: BoardItem): string {
     const draft = localByItem[item.id];
     if (draft !== undefined) return draft;
     const existing = lineByItem.get(item.id);
-    return existing ? String(existing.local_charges) : "0";
+    return existing ? String(existing.local_input) : "0";
+  }
+
+  function freightModeValue(item: BoardItem): "value" | "percent" {
+    const draft = freightModeByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing?.freight_mode === "percent" ? "percent" : "value";
+  }
+
+  function localModeValue(item: BoardItem): "value" | "percent" {
+    const draft = localModeByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing?.local_mode === "percent" ? "percent" : "value";
   }
 
   function landedCurrencyFor(basisCurrency: string, fxRate: number): string {
     return fxRate === 1 ? basisCurrency : (data?.tender.currency ?? basisCurrency);
   }
 
-  function previewPrice(item: BoardItem, basis: { amount: string; currency: string }) {
+  function previewPrice(item: BoardItem) {
+    const costRaw = costAmountValue(item);
+    const currency = costCurrencyValue(item);
+    const cost = costRaw.trim() === "" ? null : Number(costRaw);
     const marginRaw = marginValue(item);
     const margin = marginRaw.trim() === "" ? null : Number(marginRaw);
     const fxRate = Number(fxRateValue(item));
-    const freight = Number(freightValue(item));
-    const local = Number(localValue(item));
-    if (margin === null || Number.isNaN(margin) || margin < 0 || margin >= 100) return null;
-    if (!Number.isFinite(fxRate) || fxRate <= 0) return null;
-    if (!Number.isFinite(freight) || freight < 0 || !Number.isFinite(local) || local < 0) {
+    const freightRaw = Number(freightValue(item));
+    const localRaw = Number(localValue(item));
+    if (cost === null || Number.isNaN(cost) || cost <= 0 || currency.trim().length !== 3) {
       return null;
     }
+    if (margin === null || Number.isNaN(margin) || margin < 0 || margin >= 100) return null;
+    if (!Number.isFinite(fxRate) || fxRate <= 0) return null;
+    if (!Number.isFinite(freightRaw) || freightRaw < 0) return null;
+    if (!Number.isFinite(localRaw) || localRaw < 0) return null;
     try {
-      const cost = new Decimal(basis.amount);
+      const costDecimal = new Decimal(cost);
       const qty = item.quantity != null ? new Decimal(item.quantity) : new Decimal(1);
-      const landingCost = cost.times(fxRate).plus(freight).plus(local);
+      const converted = costDecimal.times(fxRate);
+      const freightAmount =
+        freightModeValue(item) === "percent"
+          ? converted.times(freightRaw).dividedBy(100)
+          : new Decimal(freightRaw);
+      const localAmount =
+        localModeValue(item) === "percent"
+          ? converted.times(localRaw).dividedBy(100)
+          : new Decimal(localRaw);
+      const landingCost = converted.plus(freightAmount).plus(localAmount);
       const unit = landingCost.dividedBy(new Decimal(1).minus(margin / 100));
       return {
         landingCost,
         unit,
         total: unit.times(qty),
-        currency: landedCurrencyFor(basis.currency, fxRate),
+        currency: landedCurrencyFor(currency, fxRate),
       };
     } catch {
       return null;
@@ -263,6 +340,13 @@ function Page() {
   }
 
   function saveRow(item: BoardItem) {
+    const costRaw = costAmountValue(item);
+    const cost = Number(costRaw);
+    const currency = costCurrencyValue(item).trim().toUpperCase();
+    if (costRaw.trim() === "" || Number.isNaN(cost) || cost <= 0 || currency.length !== 3) {
+      toast.error(t("pricing.invalidCostBasis"));
+      return;
+    }
     const marginRaw = marginValue(item);
     const margin = Number(marginRaw);
     if (marginRaw.trim() === "" || Number.isNaN(margin) || margin < 0 || margin >= 100) {
@@ -285,9 +369,14 @@ function Page() {
         organizationId: activeOrganizationId ?? "",
         tenderId: tenderId ?? "",
         boqItemId: item.id,
+        costBasisAmount: cost,
+        costBasisCurrency: currency,
+        costBasisSource: costSourceFor(item),
         fxRate,
-        freightCharges: freight,
-        localCharges: local,
+        freightMode: freightModeValue(item),
+        freightInput: freight,
+        localMode: localModeValue(item),
+        localInput: local,
         marginPercent: margin,
         version: lineByItem.get(item.id)?.version,
       },
@@ -427,10 +516,9 @@ function Page() {
                 </thead>
                 <tbody>
                   {data.items.map((item) => {
-                    const basis = costBasisFor(item);
                     const existingLine = lineByItem.get(item.id);
-                    const preview = basis ? previewPrice(item, basis) : null;
-                    const editable = !locked && canPrice && Boolean(basis);
+                    const preview = previewPrice(item);
+                    const editable = !locked && canPrice;
                     return (
                       <tr key={item.id} className="border-b border-border/70 align-top">
                         <td className="max-w-[22rem] px-2 py-2">
@@ -445,14 +533,50 @@ function Page() {
                               .join(" · ")}
                           </p>
                         </td>
-                        <td className="whitespace-nowrap px-2 py-2 text-xs" dir="ltr">
-                          {basis ? (
+                        <td className="px-2 py-2" dir="ltr">
+                          {editable ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex gap-1">
+                                <Input
+                                  aria-label={t("pricing.costBasis")}
+                                  className="h-8 w-24"
+                                  inputMode="decimal"
+                                  value={costAmountValue(item)}
+                                  onChange={(event) =>
+                                    setCostAmountByItem((current) => ({
+                                      ...current,
+                                      [item.id]: event.target.value,
+                                    }))
+                                  }
+                                />
+                                <Input
+                                  aria-label={t("pricing.costBasisCurrency")}
+                                  className="h-8 w-14 uppercase"
+                                  maxLength={3}
+                                  value={costCurrencyValue(item)}
+                                  onChange={(event) =>
+                                    setCostCurrencyByItem((current) => ({
+                                      ...current,
+                                      [item.id]: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <span className="w-fit rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                {sourceLabel(costSourceFor(item))}
+                              </span>
+                            </div>
+                          ) : existingLine ? (
                             <>
                               <span className="tabular-nums">
-                                {formatMoney(basis.amount, basis.currency, language)}
+                                {formatMoney(
+                                  existingLine.cost_basis,
+                                  existingLine.cost_basis_currency,
+                                  language,
+                                )}
                               </span>
                               <span className="ms-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                {basis.source}
+                                {sourceLabel(existingLine.cost_basis_source as CostBasisSource)}
                               </span>
                             </>
                           ) : (
@@ -481,41 +605,77 @@ function Page() {
                         </td>
                         <td className="px-2 py-2">
                           {editable ? (
-                            <Input
-                              aria-label={t("pricing.freightCharges")}
-                              className="h-8 w-24"
-                              inputMode="decimal"
-                              value={freightValue(item)}
-                              onChange={(event) =>
-                                setFreightByItem((current) => ({
-                                  ...current,
-                                  [item.id]: event.target.value,
-                                }))
-                              }
-                            />
+                            <div className="flex gap-1">
+                              <Input
+                                aria-label={t("pricing.freightCharges")}
+                                className="h-8 w-20"
+                                inputMode="decimal"
+                                value={freightValue(item)}
+                                onChange={(event) =>
+                                  setFreightByItem((current) => ({
+                                    ...current,
+                                    [item.id]: event.target.value,
+                                  }))
+                                }
+                              />
+                              <select
+                                aria-label={t("pricing.freightMode")}
+                                className="h-8 rounded-lg border border-border bg-background px-1 text-xs"
+                                value={freightModeValue(item)}
+                                onChange={(event) =>
+                                  setFreightModeByItem((current) => ({
+                                    ...current,
+                                    [item.id]: event.target.value as "value" | "percent",
+                                  }))
+                                }
+                              >
+                                <option value="value">{t("pricing.modeValue")}</option>
+                                <option value="percent">{t("pricing.modePercent")}</option>
+                              </select>
+                            </div>
                           ) : (
                             <span className="text-xs tabular-nums text-muted-foreground">
-                              {existingLine ? existingLine.freight_charges : "—"}
+                              {existingLine
+                                ? `${existingLine.freight_input}${existingLine.freight_mode === "percent" ? "%" : ""}`
+                                : "—"}
                             </span>
                           )}
                         </td>
                         <td className="px-2 py-2">
                           {editable ? (
-                            <Input
-                              aria-label={t("pricing.localCharges")}
-                              className="h-8 w-24"
-                              inputMode="decimal"
-                              value={localValue(item)}
-                              onChange={(event) =>
-                                setLocalByItem((current) => ({
-                                  ...current,
-                                  [item.id]: event.target.value,
-                                }))
-                              }
-                            />
+                            <div className="flex gap-1">
+                              <Input
+                                aria-label={t("pricing.localCharges")}
+                                className="h-8 w-20"
+                                inputMode="decimal"
+                                value={localValue(item)}
+                                onChange={(event) =>
+                                  setLocalByItem((current) => ({
+                                    ...current,
+                                    [item.id]: event.target.value,
+                                  }))
+                                }
+                              />
+                              <select
+                                aria-label={t("pricing.localMode")}
+                                className="h-8 rounded-lg border border-border bg-background px-1 text-xs"
+                                value={localModeValue(item)}
+                                onChange={(event) =>
+                                  setLocalModeByItem((current) => ({
+                                    ...current,
+                                    [item.id]: event.target.value as "value" | "percent",
+                                  }))
+                                }
+                              >
+                                <option value="value">{t("pricing.modeValue")}</option>
+                                <option value="percent">{t("pricing.modePercent")}</option>
+                              </select>
+                            </div>
                           ) : (
                             <span className="text-xs tabular-nums text-muted-foreground">
-                              {existingLine ? existingLine.local_charges : "—"}
+                              {existingLine
+                                ? `${existingLine.local_input}${existingLine.local_mode === "percent" ? "%" : ""}`
+                                : "—"}
                             </span>
                           )}
                         </td>
@@ -544,7 +704,6 @@ function Page() {
                               aria-label={t("pricing.marginPercent")}
                               className="h-8 w-24"
                               inputMode="decimal"
-                              disabled={!basis}
                               value={marginValue(item)}
                               onChange={(event) =>
                                 setMarginByItem((current) => ({
@@ -586,7 +745,7 @@ function Page() {
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={!basis || saveMutation.isPending}
+                              disabled={saveMutation.isPending}
                               onClick={() => saveRow(item)}
                             >
                               {t("common.save")}

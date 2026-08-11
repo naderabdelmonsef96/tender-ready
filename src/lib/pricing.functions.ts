@@ -13,12 +13,6 @@ function formatQuotationNumber(pattern: string, year: number, seq: number): stri
     .replace(/\{SEQ:(\d+)\}/g, (_m, width) => String(seq).padStart(Number(width), "0"));
 }
 
-type CostBasis = {
-  costBasis: Decimal;
-  costBasisCurrency: string;
-  costBasisSource: "landing_cost" | "supplier_price" | "supplier_quote";
-} | null;
-
 export const getPricingBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => orgTenderSchema.parse(input))
@@ -137,70 +131,6 @@ export const getPricingBoard = createServerFn({ method: "GET" })
     };
   });
 
-async function resolveCostBasis(
-  supabase: AuthedClient,
-  organizationId: string,
-  boqItemId: string,
-): Promise<CostBasis> {
-  const route = await supabase
-    .from("sourcing_routes")
-    .select("route, product_id, supplier_quote_id")
-    .eq("organization_id", organizationId)
-    .eq("boq_item_id", boqItemId)
-    .maybeSingle();
-  if (route.error) throw new Error(route.error.message);
-  if (!route.data) return null;
-
-  if (route.data.route === "ex_stock") {
-    if (!route.data.product_id) return null;
-    const product = await supabase
-      .from("catalogue_products")
-      .select("landing_cost, landing_cost_currency, currency")
-      .eq("organization_id", organizationId)
-      .eq("id", route.data.product_id)
-      .maybeSingle();
-    if (product.error) throw new Error(product.error.message);
-    if (!product.data?.landing_cost) return null;
-    return {
-      costBasis: new Decimal(product.data.landing_cost),
-      costBasisCurrency: product.data.landing_cost_currency ?? product.data.currency,
-      costBasisSource: "landing_cost",
-    };
-  }
-
-  if (route.data.route === "import") {
-    if (!route.data.product_id) return null;
-    const product = await supabase
-      .from("catalogue_products")
-      .select("base_cost, currency")
-      .eq("organization_id", organizationId)
-      .eq("id", route.data.product_id)
-      .maybeSingle();
-    if (product.error) throw new Error(product.error.message);
-    if (!product.data?.base_cost) return null;
-    return {
-      costBasis: new Decimal(product.data.base_cost),
-      costBasisCurrency: product.data.currency,
-      costBasisSource: "supplier_price",
-    };
-  }
-
-  if (!route.data.supplier_quote_id) return null;
-  const quote = await supabase
-    .from("supplier_quotes")
-    .select("unit_cost, currency")
-    .eq("organization_id", organizationId)
-    .eq("id", route.data.supplier_quote_id)
-    .maybeSingle();
-  if (quote.error) throw new Error(quote.error.message);
-  if (!quote.data?.unit_cost) return null;
-  return {
-    costBasis: new Decimal(quote.data.unit_cost),
-    costBasisCurrency: quote.data.currency,
-    costBasisSource: "supplier_quote",
-  };
-}
-
 export const savePricingLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => savePricingLineSchema.parse(input))
@@ -225,24 +155,24 @@ export const savePricingLine = createServerFn({ method: "POST" })
       .maybeSingle();
     if (tender.error) throw new Error(tender.error.message);
 
-    const basis = await resolveCostBasis(supabase, data.organizationId, data.boqItemId);
-    if (!basis) {
-      throw new Error(
-        "This item has no cost yet — confirm its supply route and capture a landing cost or supplier quote first.",
-      );
-    }
-
     const qty = item.data.quantity != null ? new Decimal(item.data.quantity) : new Decimal(1);
-    const landingCost = basis.costBasis
-      .times(data.fxRate)
-      .plus(data.freightCharges)
-      .plus(data.localCharges);
+    const costBasis = new Decimal(data.costBasisAmount);
+    const convertedCost = costBasis.times(data.fxRate);
+    const freightAmount =
+      data.freightMode === "percent"
+        ? convertedCost.times(data.freightInput).dividedBy(100)
+        : new Decimal(data.freightInput);
+    const localAmount =
+      data.localMode === "percent"
+        ? convertedCost.times(data.localInput).dividedBy(100)
+        : new Decimal(data.localInput);
+    const landingCost = convertedCost.plus(freightAmount).plus(localAmount);
     const unitPrice = landingCost.dividedBy(new Decimal(1).minus(data.marginPercent / 100));
     const totalPrice = unitPrice.times(qty);
     const landedCurrency =
       data.fxRate === 1
-        ? basis.costBasisCurrency
-        : (tender.data?.currency ?? basis.costBasisCurrency);
+        ? data.costBasisCurrency
+        : (tender.data?.currency ?? data.costBasisCurrency);
 
     const existing = await supabase
       .from("pricing_lines")
@@ -259,12 +189,16 @@ export const savePricingLine = createServerFn({ method: "POST" })
       organization_id: data.organizationId,
       tender_id: item.data.tender_id,
       boq_item_id: data.boqItemId,
-      cost_basis: basis.costBasis.toNumber(),
-      cost_basis_currency: basis.costBasisCurrency,
-      cost_basis_source: basis.costBasisSource,
+      cost_basis: costBasis.toNumber(),
+      cost_basis_currency: data.costBasisCurrency,
+      cost_basis_source: data.costBasisSource,
       fx_rate: data.fxRate,
-      freight_charges: data.freightCharges,
-      local_charges: data.localCharges,
+      freight_mode: data.freightMode,
+      freight_input: data.freightInput,
+      freight_charges: freightAmount.toNumber(),
+      local_mode: data.localMode,
+      local_input: data.localInput,
+      local_charges: localAmount.toNumber(),
       landing_cost: landingCost.toNumber(),
       margin_percent: data.marginPercent,
       unit_price: unitPrice.toNumber(),
