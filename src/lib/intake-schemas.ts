@@ -35,6 +35,12 @@ export const signedUrlSchema = z.object({
   storagePath: z.string().trim().min(3).max(500),
 });
 
+export const deleteDocumentVersionSchema = z.object({
+  organizationId: z.string().uuid(),
+  tenderId: z.string().uuid(),
+  documentVersionId: z.string().uuid(),
+});
+
 export const startExtractionSchema = z.object({
   organizationId: z.string().uuid(),
   documentVersionId: z.string().uuid(),
@@ -56,6 +62,12 @@ export const updateItemSchema = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
   exclusionReason: z.string().trim().max(500).optional().nullable(),
   overrideReason: z.string().trim().max(500).optional().nullable(),
+});
+
+export const deleteBoqItemSchema = z.object({
+  organizationId: z.string().uuid(),
+  tenderId: z.string().uuid(),
+  itemId: z.string().uuid(),
 });
 
 export const bulkItemsSchema = z.object({

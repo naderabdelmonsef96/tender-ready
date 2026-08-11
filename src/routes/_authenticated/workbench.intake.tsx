@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDate, formatDateTime } from "@/lib/format";
 import {
   createTender,
+  deleteDocumentVersion,
   getIntake,
   getSignedFileUrl,
   listIntakeTenders,
@@ -80,6 +81,7 @@ function Page() {
   const register = useServerFn(registerUploadedFile);
   const ingest = useServerFn(startExtraction);
   const signUrl = useServerFn(getSignedFileUrl);
+  const deleteVersion = useServerFn(deleteDocumentVersion);
 
   const canEdit = role === "org_admin" || role === "proposal_engineer";
   const [showForm, setShowForm] = useState(false);
@@ -135,6 +137,15 @@ function Page() {
     mutationFn: ingest,
     onSuccess: () => {
       toast.success(t("intake.extracted"));
+      invalidate();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteVersion,
+    onSuccess: () => {
+      toast.success(t("intake.fileDeleted"));
       invalidate();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -655,6 +666,33 @@ function Page() {
                                     onClick={() => setReplaceFileId(version.file_id)}
                                   >
                                     {t("intake.replace")}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-destructive hover:text-destructive"
+                                    disabled={deleteMutation.isPending}
+                                    onClick={() => {
+                                      const message =
+                                        job &&
+                                        (job.items_created > 0 || job.requirements_created > 0)
+                                          ? t("intake.confirmDeleteWithData", {
+                                              name: file?.original_name ?? "",
+                                            })
+                                          : t("intake.confirmDelete", {
+                                              name: file?.original_name ?? "",
+                                            });
+                                      if (!window.confirm(message)) return;
+                                      deleteMutation.mutate({
+                                        data: {
+                                          organizationId: activeOrganizationId ?? "",
+                                          tenderId: tenderId ?? "",
+                                          documentVersionId: version.id,
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    {t("intake.delete")}
                                   </Button>
                                 </>
                               )}

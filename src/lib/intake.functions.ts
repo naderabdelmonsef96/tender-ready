@@ -5,6 +5,8 @@ import {
   bulkItemsSchema,
   createTenderSchema,
   decideReviewSchema,
+  deleteBoqItemSchema,
+  deleteDocumentVersionSchema,
   orgTenderSchema,
   registerFileSchema,
   resolveExceptionSchema,
@@ -280,6 +282,83 @@ export const registerUploadedFile = createServerFn({ method: "POST" })
     };
   });
 
+export const deleteDocumentVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => deleteDocumentVersionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { writeAudit } = await import("@/lib/intake-db.server");
+
+    const version = await supabase
+      .from("document_versions")
+      .select("id, file_id, version_no, storage_path")
+      .eq("organization_id", data.organizationId)
+      .eq("tender_id", data.tenderId)
+      .eq("id", data.documentVersionId)
+      .maybeSingle();
+    if (version.error) throw new Error(version.error.message);
+    if (!version.data) throw new Error("File version not found");
+
+    const file = await supabase
+      .from("tender_files")
+      .select("id, original_name")
+      .eq("id", version.data.file_id)
+      .maybeSingle();
+    if (file.error) throw new Error(file.error.message);
+
+    const siblings = await supabase
+      .from("document_versions")
+      .select("id, version_no")
+      .eq("file_id", version.data.file_id)
+      .neq("id", version.data.id)
+      .order("version_no", { ascending: false });
+    if (siblings.error) throw new Error(siblings.error.message);
+
+    const deletedVersion = await supabase
+      .from("document_versions")
+      .delete()
+      .eq("id", data.documentVersionId);
+    if (deletedVersion.error) throw new Error(deletedVersion.error.message);
+
+    const remaining = siblings.data ?? [];
+    if (remaining.length === 0) {
+      const deletedFile = await supabase
+        .from("tender_files")
+        .delete()
+        .eq("id", version.data.file_id);
+      if (deletedFile.error) throw new Error(deletedFile.error.message);
+    } else {
+      await supabase
+        .from("tender_files")
+        .update({ current_version: remaining[0]!.version_no })
+        .eq("id", version.data.file_id);
+    }
+
+    const storageRemoval = await supabase.storage
+      .from("tender-files")
+      .remove([version.data.storage_path]);
+    if (storageRemoval.error) {
+      console.warn(
+        "[deleteDocumentVersion] storage object removal failed",
+        storageRemoval.error.message,
+      );
+    }
+
+    await writeAudit(supabase, {
+      organizationId: data.organizationId,
+      actorId: userId,
+      action: "tender_file.deleted",
+      objectType: "document_version",
+      objectId: data.documentVersionId,
+      objectVersion: version.data.version_no,
+      isMaterial: true,
+      summary: `${file.data?.original_name ?? "File"} v${version.data.version_no} deleted`,
+      metadata: { tenderId: data.tenderId, fileId: version.data.file_id },
+    });
+
+    return { deleted: true, fileAlsoDeleted: remaining.length === 0 };
+  });
+
 export const getSignedFileUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => signedUrlSchema.parse(input))
@@ -536,6 +615,64 @@ export const updateBoqItem = createServerFn({ method: "POST" })
     });
 
     return { item: updated, invalidatedApprovals: invalidated };
+  });
+
+export const deleteBoqItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => deleteBoqItemSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { invalidateDownstream, writeAudit } = await import("@/lib/intake-db.server");
+
+    const item = await supabase
+      .from("boq_items")
+      .select("id, item_code, description")
+      .eq("organization_id", data.organizationId)
+      .eq("tender_id", data.tenderId)
+      .eq("id", data.itemId)
+      .maybeSingle();
+    if (item.error) throw new Error(item.error.message);
+    if (!item.data) throw new Error("Item not found");
+
+    const [sourcing, pricing] = await Promise.all([
+      supabase
+        .from("sourcing_routes")
+        .select("id", { count: "exact", head: true })
+        .eq("boq_item_id", data.itemId),
+      supabase
+        .from("pricing_lines")
+        .select("id", { count: "exact", head: true })
+        .eq("boq_item_id", data.itemId),
+    ]);
+    if (sourcing.error) throw new Error(sourcing.error.message);
+    if (pricing.error) throw new Error(pricing.error.message);
+    if ((sourcing.count ?? 0) > 0 || (pricing.count ?? 0) > 0) {
+      throw new Error(
+        "This item already has sourcing or pricing decided on it — deleting it would silently remove that work. Use Exclude instead.",
+      );
+    }
+
+    const deleted = await supabase.from("boq_items").delete().eq("id", data.itemId);
+    if (deleted.error) throw new Error(deleted.error.message);
+
+    const invalidated = await invalidateDownstream(supabase, {
+      organizationId: data.organizationId,
+      tenderId: data.tenderId,
+      reason: `BOQ item ${item.data.item_code ?? item.data.description} was deleted`,
+    });
+
+    await writeAudit(supabase, {
+      organizationId: data.organizationId,
+      actorId: userId,
+      action: "boq_item.deleted",
+      objectType: "boq_item",
+      objectId: data.itemId,
+      isMaterial: true,
+      summary: `${item.data.item_code ?? item.data.description} deleted`,
+      metadata: { invalidatedApprovals: invalidated },
+    });
+
+    return { deleted: true, invalidatedApprovals: invalidated };
   });
 
 export const bulkUpdateBoqItems = createServerFn({ method: "POST" })

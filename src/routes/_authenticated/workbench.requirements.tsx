@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, FileSearch } from "lucide-react";
+import { AlertTriangle, FileSearch, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import {
   bulkUpdateBoqItems,
   decideTechnicalReview,
+  deleteBoqItem,
   getRegister,
   listIntakeTenders,
   resolveException,
@@ -93,6 +94,7 @@ function Page() {
   const fetchRegister = useServerFn(getRegister);
   const saveItem = useServerFn(updateBoqItem);
   const bulkSave = useServerFn(bulkUpdateBoqItems);
+  const removeItem = useServerFn(deleteBoqItem);
   const resolve = useServerFn(resolveException);
   const submitReview = useServerFn(submitTechnicalReview);
   const decideReview = useServerFn(decideTechnicalReview);
@@ -137,6 +139,17 @@ function Page() {
     onSuccess: (result) => {
       toast.success(t("register.saved"));
       setEditing(null);
+      invalidate(result as { invalidatedApprovals?: number });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: removeItem,
+    onSuccess: (result, variables) => {
+      toast.success(t("register.itemDeleted"));
+      const deletedId = (variables as { data: { itemId: string } } | undefined)?.data.itemId;
+      setSelected((current) => current.filter((id) => id !== deletedId));
       invalidate(result as { invalidatedApprovals?: number });
     },
     onError: (error: Error) => toast.error(error.message),
@@ -211,6 +224,12 @@ function Page() {
     setSelected((current) =>
       current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
     );
+  }
+
+  const allVisibleSelected = items.length > 0 && items.every((item) => selected.includes(item.id));
+
+  function toggleAll() {
+    setSelected(allVisibleSelected ? [] : items.map((item) => item.id));
   }
 
   const nameOf = (ref: SourceRef | null | undefined) =>
@@ -412,7 +431,13 @@ function Page() {
                   <table className="w-full border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                        <th scope="col" className="w-8 px-2 py-2" />
+                        <th scope="col" className="w-8 px-2 py-2">
+                          <Checkbox
+                            checked={allVisibleSelected}
+                            onCheckedChange={toggleAll}
+                            aria-label={t("register.selectAll")}
+                          />
+                        </th>
                         <th scope="col" className="px-2 py-2 text-start">
                           {t("register.code")}
                         </th>
@@ -437,6 +462,11 @@ function Page() {
                         <th scope="col" className="px-2 py-2 text-start">
                           {t("register.evidence")}
                         </th>
+                        {canEditRegister && (
+                          <th scope="col" className="px-2 py-2 text-start">
+                            {t("common.actions")}
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -471,11 +501,34 @@ function Page() {
                             )}
                           </td>
                           <td className="max-w-[12rem] px-2 py-2 text-xs text-muted-foreground">
-                            <span className="block truncate" title={item.section_path ?? ""}>
-                              {item.section_path ?? "—"}
-                            </span>
+                            {canEditRegister ? (
+                              <button
+                                type="button"
+                                className="block w-full truncate text-start hover:text-primary hover:underline"
+                                title={item.section_path ?? ""}
+                                onClick={() => setEditing(item)}
+                              >
+                                {item.section_path ?? "—"}
+                              </button>
+                            ) : (
+                              <span className="block truncate" title={item.section_path ?? ""}>
+                                {item.section_path ?? "—"}
+                              </span>
+                            )}
                           </td>
-                          <td className="px-2 py-2">{item.unit ?? "—"}</td>
+                          <td className="px-2 py-2">
+                            {canEditRegister ? (
+                              <button
+                                type="button"
+                                className="hover:text-primary hover:underline"
+                                onClick={() => setEditing(item)}
+                              >
+                                {item.unit ?? "—"}
+                              </button>
+                            ) : (
+                              (item.unit ?? "—")
+                            )}
+                          </td>
                           <td className="px-2 py-2 text-end tabular-nums" dir="ltr">
                             {item.rate_only ? t("register.rateOnly") : (item.quantity ?? "—")}
                           </td>
@@ -508,6 +561,35 @@ function Page() {
                               {t("register.evidence")}
                             </Button>
                           </td>
+                          {canEditRegister && (
+                            <td className="px-2 py-2">
+                              <div className="flex flex-wrap gap-1.5">
+                                <Button size="sm" variant="ghost" onClick={() => setEditing(item)}>
+                                  <Pencil className="me-1 h-3.5 w-3.5" aria-hidden="true" />
+                                  {t("common.edit")}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:text-destructive"
+                                  disabled={deleteMutation.isPending}
+                                  onClick={() => {
+                                    if (!window.confirm(t("register.confirmDeleteItem"))) return;
+                                    deleteMutation.mutate({
+                                      data: {
+                                        organizationId: activeOrganizationId ?? "",
+                                        tenderId: tenderId ?? "",
+                                        itemId: item.id,
+                                      },
+                                    });
+                                  }}
+                                >
+                                  <Trash2 className="me-1 h-3.5 w-3.5" aria-hidden="true" />
+                                  {t("common.delete")}
+                                </Button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
