@@ -469,7 +469,18 @@ function Page() {
                               ))}
                             </select>
                           )}
-                          {(match?.matched_on as string[] | null)?.length ? (
+                          {(match?.matched_on as string[] | null)?.includes("ai") ? (
+                            <div className="mt-1">
+                              <span className="inline-flex rounded-full bg-info/10 px-2 py-0.5 text-[11px] font-medium text-info">
+                                {t("portfolio.aiSuggested")}
+                              </span>
+                              {match?.note ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {t("portfolio.aiRationale")}: {match.note}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (match?.matched_on as string[] | null)?.length ? (
                             <p className="mt-1 text-xs text-muted-foreground">
                               {t("portfolio.matchedOn")}:{" "}
                               {(match?.matched_on as string[]).join(", ")}

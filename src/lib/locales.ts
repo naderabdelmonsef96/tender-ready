@@ -419,7 +419,9 @@ export const en = {
     runMatch: "Run assistive match",
     running: "Matching…",
     ranSummary:
-      "{{suggested}} suggestion(s), {{unmatched}} item(s) with no candidate, {{skipped}} decision(s) kept.",
+      "{{suggested}} suggestion(s) ({{aiSuggested}} AI-assisted), {{unmatched}} item(s) with no candidate, {{skipped}} decision(s) kept.",
+    aiSuggested: "AI suggested",
+    aiRationale: "AI rationale",
     item: "Tender item",
     suggestion: "Suggested product",
     score: "Match score",
@@ -1047,7 +1049,10 @@ export const ar: typeof en = {
       "الذكاء الاصطناعي يقترح فقط. كل بند يحتاج قرارًا باسم مسؤول قبل الانتقال إلى التوريد.",
     runMatch: "تشغيل المطابقة المساعدة",
     running: "جارٍ المطابقة…",
-    ranSummary: "{{suggested}} اقتراح، {{unmatched}} بند بدون مرشح، {{skipped}} قرار محفوظ.",
+    ranSummary:
+      "{{suggested}} اقتراح ({{aiSuggested}} بمساعدة الذكاء الاصطناعي)، {{unmatched}} بند بدون مرشح، {{skipped}} قرار محفوظ.",
+    aiSuggested: "اقتراح بالذكاء الاصطناعي",
+    aiRationale: "تفسير الذكاء الاصطناعي",
     item: "بند العطاء",
     suggestion: "المقترح",
     score: "درجة التطابق",

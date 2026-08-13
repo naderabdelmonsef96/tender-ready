@@ -139,32 +139,64 @@ export const runPortfolioMatch = createServerFn({ method: "POST" })
 
     let suggested = 0;
     let unmatched = 0;
-    const payload = rows
-      .filter((row) => !decided.has(row.id))
-      .map((row) => {
-        const ranked = rankCandidates(
-          {
+    const eligible = rows.filter((row) => !decided.has(row.id));
+    const rowById = new Map(eligible.map((row) => [row.id, row]));
+    const payload = eligible.map((row) => {
+      const ranked = rankCandidates(
+        {
+          description: [row.description, row.description_ar ?? ""].join(" "),
+          unit: row.unit,
+          sectionPath: row.section_path,
+        },
+        catalogue,
+      );
+      const best = ranked[0] ?? null;
+      if (best) suggested += 1;
+      else unmatched += 1;
+      return {
+        organization_id: data.organizationId,
+        tender_id: data.tenderId,
+        boq_item_id: row.id,
+        product_id: best?.productId ?? null,
+        state: (best ? "suggested" : "unmatched") as "suggested" | "unmatched",
+        score: best?.score ?? null,
+        matched_on: (best?.matchedOn ?? []) as never,
+        failed_on: (best?.failedOn ?? []) as never,
+        note: null as string | null,
+        created_by: userId,
+      };
+    });
+
+    const { suggestPortfolioMatches } = await import("@/lib/portfolio-ai.server");
+    const unmatchedPayload = payload.filter((entry) => entry.state === "unmatched");
+    let aiSuggested = 0;
+    if (unmatchedPayload.length > 0) {
+      const aiCandidates = await suggestPortfolioMatches({
+        items: unmatchedPayload.map((entry) => {
+          const row = rowById.get(entry.boq_item_id)!;
+          return {
+            boqItemId: row.id,
             description: [row.description, row.description_ar ?? ""].join(" "),
             unit: row.unit,
             sectionPath: row.section_path,
-          },
-          catalogue,
-        );
-        const best = ranked[0] ?? null;
-        if (best) suggested += 1;
-        else unmatched += 1;
-        return {
-          organization_id: data.organizationId,
-          tender_id: data.tenderId,
-          boq_item_id: row.id,
-          product_id: best?.productId ?? null,
-          state: (best ? "suggested" : "unmatched") as "suggested" | "unmatched",
-          score: best?.score ?? null,
-          matched_on: (best?.matchedOn ?? []) as never,
-          failed_on: (best?.failedOn ?? []) as never,
-          created_by: userId,
-        };
+          };
+        }),
+        catalogue,
       });
+      const byBoqItemId = new Map(payload.map((entry) => [entry.boq_item_id, entry]));
+      for (const candidate of aiCandidates) {
+        const entry = byBoqItemId.get(candidate.boqItemId);
+        if (!entry || entry.state !== "unmatched") continue;
+        entry.product_id = candidate.productId;
+        entry.state = "suggested";
+        entry.score = candidate.confidence;
+        entry.matched_on = ["ai"] as never;
+        entry.note = candidate.rationale || null;
+        suggested += 1;
+        unmatched -= 1;
+        aiSuggested += 1;
+      }
+    }
 
     for (let offset = 0; offset < payload.length; offset += 500) {
       const { error } = await supabase
@@ -180,11 +212,11 @@ export const runPortfolioMatch = createServerFn({ method: "POST" })
       objectType: "portfolio_match_run",
       objectId: data.tenderId,
       isMaterial: false,
-      summary: `${suggested} suggestion(s), ${unmatched} item(s) with no candidate`,
+      summary: `${suggested} suggestion(s) (${aiSuggested} AI-assisted), ${unmatched} item(s) with no candidate`,
       metadata: { idempotencyKey: data.idempotencyKey, catalogueSize: catalogue.length },
     });
 
-    return { suggested, unmatched, skipped: decided.size };
+    return { suggested, unmatched, skipped: decided.size, aiSuggested };
   });
 
 export const decideMatch = createServerFn({ method: "POST" })
