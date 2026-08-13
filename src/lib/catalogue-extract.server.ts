@@ -39,7 +39,7 @@ export async function extractCatalogueDocument(input: {
     };
   }
 
-  const apiKey = process.env["LOVABLE_API_KEY"];
+  const apiKey = process.env["GOOGLE_AI_API_KEY"];
   if (!apiKey) {
     return {
       ok: false,
@@ -93,11 +93,12 @@ export async function extractCatalogueDocument(input: {
           "The document reader is rate limited right now. Retry extraction in a few minutes.",
       };
     }
-    if (response.status === 402) {
+    if (response.status === 402 || response.status === 403) {
       return {
         ok: false,
         status: "failed",
-        message: "The workspace AI credit balance is exhausted. Top up, then retry extraction.",
+        message:
+          "The document reader's AI quota or billing needs attention. Check the Google AI API key, then retry extraction.",
       };
     }
     return {

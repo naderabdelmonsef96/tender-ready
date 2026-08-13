@@ -10,8 +10,9 @@ import {
 } from "@/lib/doc-ai";
 import type { ExtractionResult } from "@/lib/boq-parse";
 
-export const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-export const MODEL = "google/gemini-3.6-flash";
+export const GATEWAY_URL =
+  "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+export const MODEL = "gemini-3.6-flash";
 export const MAX_INLINE_BYTES = 18 * 1024 * 1024;
 
 /** Worker-safe base64 for inline document attachments. */
@@ -135,7 +136,7 @@ export async function extractDocument(input: {
     };
   }
 
-  const apiKey = process.env["LOVABLE_API_KEY"];
+  const apiKey = process.env["GOOGLE_AI_API_KEY"];
   if (!apiKey) {
     return {
       ok: false,
@@ -179,11 +180,12 @@ export async function extractDocument(input: {
           "The document reader is rate limited right now. Retry extraction in a few minutes.",
       };
     }
-    if (response.status === 402) {
+    if (response.status === 402 || response.status === 403) {
       return {
         ok: false,
         status: "failed",
-        message: "The workspace AI credit balance is exhausted. Top up, then retry extraction.",
+        message:
+          "The document reader's AI quota or billing needs attention. Check the Google AI API key, then retry extraction.",
       };
     }
     return {
