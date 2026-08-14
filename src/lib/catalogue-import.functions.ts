@@ -118,7 +118,7 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
 
     const batch = await supabase
       .from("catalogue_import_batches")
-      .select("id, file_name, storage_path")
+      .select("id, file_name, storage_path, status")
       .eq("organization_id", data.organizationId)
       .eq("id", data.importBatchId)
       .maybeSingle();
@@ -127,6 +127,18 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
     const batchData = batch.data;
     if (!batchData.storage_path || !batchData.file_name) {
       throw new Error("This import batch has no stored file to read.");
+    }
+    // Extraction is only ever started once per batch, right after upload. A
+    // second call (browser retry, duplicate submit) would otherwise race the
+    // first and its result could clobber real, already-stored rows.
+    if (batchData.status !== "uploaded") {
+      const { data: current, error } = await supabase
+        .from("catalogue_import_batches")
+        .select("*")
+        .eq("id", batchData.id)
+        .single();
+      if (error) throw new Error(error.message);
+      return { batch: current, rowCount: current.total_rows };
     }
     const storagePath = batchData.storage_path;
     const fileName = batchData.file_name;
@@ -143,6 +155,19 @@ export const startCatalogueImportExtraction = createServerFn({ method: "POST" })
     };
 
     const failWithMessage = async (status: string, message: string) => {
+      // A duplicate/retried extraction call for the same batch can resolve
+      // after a concurrent call already parsed it successfully. Never let a
+      // late-arriving failure clobber real results that are already stored.
+      const current = await supabase
+        .from("catalogue_import_batches")
+        .select("*")
+        .eq("id", batchData.id)
+        .single();
+      if (current.error) throw new Error(current.error.message);
+      if (current.data.status === "parsed" || current.data.status === "partial") {
+        return { batch: current.data, rowCount: current.data.total_rows };
+      }
+
       await supabase.from("catalogue_import_rows").insert({
         batch_id: batchData.id,
         row_number: null,
