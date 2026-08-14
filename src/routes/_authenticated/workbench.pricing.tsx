@@ -194,14 +194,6 @@ function Page() {
       };
     }
     if (route.route === "import") {
-      const quote = route.supplier_quote_id ? quoteById.get(route.supplier_quote_id) : null;
-      if (quote?.unit_cost) {
-        return {
-          amount: String(quote.unit_cost),
-          currency: quote.currency,
-          sourceKey: "supplier_quote",
-        };
-      }
       const product = route.product_id ? productById.get(route.product_id) : null;
       if (!product?.base_cost) return null;
       return {

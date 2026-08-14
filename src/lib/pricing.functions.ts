@@ -78,10 +78,8 @@ export const getPricingBoard = createServerFn({ method: "GET" })
     if (lines.error) throw new Error(lines.error.message);
 
     // Cost basis for ex-stock routes comes from the matched product's landing
-    // cost. Import routes prefer a confirmed supplier quote for that specific
-    // route (the real, deal-specific cost) and only fall back to the matched
-    // product's catalogue price when no quote has been confirmed yet. Every
-    // other route reads the accepted supplier quote. Never typed.
+    // cost; import routes read that same product's supplier price list entry;
+    // every other route reads the accepted supplier quote. Never typed.
     const routeByItem = new Map((routes.data ?? []).map((r) => [r.boq_item_id, r]));
     const quoteById = new Map((quotes.data ?? []).map((q) => [q.id, q]));
     const productIds = (routes.data ?? [])
@@ -124,8 +122,6 @@ export const getPricingBoard = createServerFn({ method: "GET" })
           return !product?.landing_cost;
         }
         if (route.route === "import") {
-          const quote = route.supplier_quote_id ? quoteById.get(route.supplier_quote_id) : null;
-          if (quote?.unit_cost) return false;
           const product = route.product_id ? productById.get(route.product_id) : null;
           return !product?.base_cost;
         }
