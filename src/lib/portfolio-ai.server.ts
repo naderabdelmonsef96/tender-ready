@@ -11,7 +11,7 @@
 
 import { z } from "zod";
 
-import { GATEWAY_URL, MODEL } from "@/lib/doc-extract.server";
+import { GATEWAY_URL } from "@/lib/doc-extract.server";
 import type { MatchProduct } from "@/lib/match-engine";
 
 export type PortfolioAiItem = {
@@ -102,14 +102,11 @@ export async function suggestPortfolioMatches(input: {
   try {
     response = await fetch(GATEWAY_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        model: MODEL,
-        temperature: 0,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: "user", parts: [{ text: userContent }] }],
+        generationConfig: { temperature: 0, responseMimeType: "application/json" },
       }),
     });
   } catch (error) {
@@ -126,8 +123,12 @@ export async function suggestPortfolioMatches(input: {
     return [];
   }
 
-  const payload = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = payload.choices?.[0]?.message?.content ?? "";
+  const payload = (await response.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const content = (payload.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text ?? "")
+    .join("");
   if (!content.trim()) return [];
 
   let parsed: z.infer<typeof responseSchema>;

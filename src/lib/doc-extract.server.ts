@@ -10,9 +10,8 @@ import {
 } from "@/lib/doc-ai";
 import type { ExtractionResult } from "@/lib/boq-parse";
 
-export const GATEWAY_URL =
-  "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 export const MODEL = "gemini-3.6-flash";
+export const GATEWAY_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 export const MAX_INLINE_BYTES = 18 * 1024 * 1024;
 
 /** Worker-safe base64 for inline document attachments. */
@@ -65,10 +64,8 @@ export function readDocxText(bytes: ArrayBuffer): string {
   return chunks.join("\n\n");
 }
 
-export type ContentBlock =
-  | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } }
-  | { type: "file"; file: { filename: string; file_data: string } };
+/** A Gemini `Part` — inline binary data or plain text, never both in one part. */
+export type ContentBlock = { text: string } | { inline_data: { mime_type: string; data: string } };
 
 export function buildBlocks(
   kind: DocumentKind,
@@ -77,32 +74,24 @@ export function buildBlocks(
   bytes: ArrayBuffer,
   instruction: string = AI_EXTRACTION_USER_INSTRUCTION,
 ): ContentBlock[] {
-  const blocks: ContentBlock[] = [{ type: "text", text: instruction }];
+  const blocks: ContentBlock[] = [{ text: instruction }];
 
   if (kind === "pdf") {
     blocks.push({
-      type: "file",
-      file: {
-        filename: fileName,
-        file_data: `data:${mimeType || "application/pdf"};base64,${toBase64(bytes)}`,
-      },
+      inline_data: { mime_type: mimeType || "application/pdf", data: toBase64(bytes) },
     });
     return blocks;
   }
   if (kind === "image") {
     blocks.push({
-      type: "image_url",
-      image_url: { url: `data:${imageMime(fileName, mimeType)};base64,${toBase64(bytes)}` },
+      inline_data: { mime_type: imageMime(fileName, mimeType), data: toBase64(bytes) },
     });
     return blocks;
   }
 
   const text = kind === "word" ? readDocxText(bytes) : new TextDecoder().decode(bytes);
   if (!text.trim()) throw new Error("No readable text could be found in this document.");
-  blocks.push({
-    type: "text",
-    text: `Document: ${fileName}\n\n${text.slice(0, 180_000)}`,
-  });
+  blocks.push({ text: `Document: ${fileName}\n\n${text.slice(0, 180_000)}` });
   return blocks;
 }
 
@@ -158,14 +147,11 @@ export async function extractDocument(input: {
 
   const response = await fetch(GATEWAY_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      messages: [
-        { role: "system", content: AI_EXTRACTION_SYSTEM_PROMPT },
-        { role: "user", content: blocks },
-      ],
+      systemInstruction: { parts: [{ text: AI_EXTRACTION_SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: blocks }],
+      generationConfig: { temperature: 0, responseMimeType: "application/json" },
     }),
   });
 
@@ -196,9 +182,11 @@ export async function extractDocument(input: {
   }
 
   const payload = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
-  const content = payload.choices?.[0]?.message?.content ?? "";
+  const content = (payload.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text ?? "")
+    .join("");
   if (!content.trim()) {
     return { ok: false, status: "failed", message: "The document reader returned no content." };
   }

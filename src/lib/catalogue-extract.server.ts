@@ -6,7 +6,7 @@ import {
   type MappedCatalogueAiRow,
 } from "@/lib/catalogue-doc-ai";
 import { classifyDocument } from "@/lib/doc-ai";
-import { buildBlocks, GATEWAY_URL, MAX_INLINE_BYTES, MODEL } from "@/lib/doc-extract.server";
+import { buildBlocks, GATEWAY_URL, MAX_INLINE_BYTES } from "@/lib/doc-extract.server";
 
 export type CatalogueDocumentExtractionOutcome =
   | { ok: true; rows: MappedCatalogueAiRow[] }
@@ -67,14 +67,11 @@ export async function extractCatalogueDocument(input: {
 
   const response = await fetch(GATEWAY_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      messages: [
-        { role: "system", content: CATALOGUE_AI_SYSTEM_PROMPT },
-        { role: "user", content: blocks },
-      ],
+      systemInstruction: { parts: [{ text: CATALOGUE_AI_SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: blocks }],
+      generationConfig: { temperature: 0, responseMimeType: "application/json" },
     }),
   });
 
@@ -109,9 +106,11 @@ export async function extractCatalogueDocument(input: {
   }
 
   const payload = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
-  const content = payload.choices?.[0]?.message?.content ?? "";
+  const content = (payload.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text ?? "")
+    .join("");
   if (!content.trim()) {
     return { ok: false, status: "failed", message: "The document reader returned no content." };
   }
