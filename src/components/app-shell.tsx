@@ -71,17 +71,15 @@ function BrandMark({ collapsed }: { collapsed: boolean }) {
     >
       <img
         src={logo}
-        alt=""
-        className="h-8 w-8 shrink-0 rounded-md bg-white/95 object-contain p-1"
+        alt={t("brand.name")}
+        className={cn(
+          "shrink-0 rounded-md bg-white/95 object-contain",
+          collapsed ? "h-8 w-auto max-w-[52px] p-1" : "h-10 w-auto max-w-[176px] px-2 py-1.5",
+        )}
       />
       {!collapsed && (
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">
-            {t("brand.name")}
-          </span>
-          <span className="truncate text-[11px] text-sidebar-foreground/55">
-            {t("brand.tagline")}
-          </span>
+        <span className="truncate text-[11px] text-sidebar-foreground/55">
+          {t("brand.tagline")}
         </span>
       )}
     </Link>

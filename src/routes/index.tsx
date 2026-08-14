@@ -52,9 +52,8 @@ function Landing() {
           <img
             src={logo}
             alt="TenderReady"
-            className="h-9 w-9 rounded-md bg-white/95 object-contain p-1"
+            className="h-11 w-auto max-w-[200px] rounded-md bg-white/95 object-contain px-2 py-1.5"
           />
-          <span className="text-sm font-semibold text-sidebar-accent-foreground">TenderReady</span>
           <div className="ms-auto">
             <Button asChild size="sm">
               <Link to="/auth" search={{ next: "/dashboard" }}>
