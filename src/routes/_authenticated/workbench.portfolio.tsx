@@ -197,7 +197,7 @@ function Page() {
   const isAdmin = data?.myRole === "org_admin";
   const activeTask = data?.activeTask ?? null;
   const selfSubmitted = activeTask?.submitted_by === data?.userId;
-  const locked = Boolean(activeTask);
+  const locked = Boolean(activeTask) && !isAdmin;
 
   function confirmItem(item: BoardItem, productId: string) {
     let overrideReason: string | null = null;
@@ -630,24 +630,35 @@ function Page() {
                     {isAdmin && (
                       <div className="flex flex-col items-start gap-1.5 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
                         <p className="text-xs text-warning">{t("approvals.overrideWarning")}</p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-warning text-warning hover:bg-warning/10"
-                          disabled={stageMutation.isPending || !note.trim()}
-                          onClick={() =>
-                            stageMutation.mutate({
-                              data: {
-                                organizationId: activeOrganizationId ?? "",
-                                taskId: activeTask.id,
-                                decision: "approved",
-                                note: note || null,
-                              },
-                            })
-                          }
-                        >
-                          {t("approvals.override")}
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          {(["approved", "changes_requested", "rejected"] as const).map(
+                            (decision) => (
+                              <Button
+                                key={decision}
+                                variant="outline"
+                                size="sm"
+                                className="border-warning text-warning hover:bg-warning/10"
+                                disabled={stageMutation.isPending || !note.trim()}
+                                onClick={() =>
+                                  stageMutation.mutate({
+                                    data: {
+                                      organizationId: activeOrganizationId ?? "",
+                                      taskId: activeTask.id,
+                                      decision,
+                                      note: note || null,
+                                    },
+                                  })
+                                }
+                              >
+                                {decision === "approved"
+                                  ? t("register.approve")
+                                  : decision === "changes_requested"
+                                    ? t("register.requestChanges")
+                                    : t("register.reject")}
+                              </Button>
+                            ),
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
