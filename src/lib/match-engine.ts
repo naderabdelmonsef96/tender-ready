@@ -32,14 +32,21 @@ export type MatchItem = {
   sectionPath: string | null;
 };
 
+export type MatchDifference = {
+  key: string;
+  requested: string;
+  catalog: string;
+};
+
 export type MatchCandidate = {
   productId: string;
   score: number;
   matchedOn: string[];
   failedOn: string[];
+  differences: MatchDifference[];
 };
 
-/** Score below which a candidate is not even suggested. */
+/** Score below which the UI marks a suggestion as weak — advisory only, never excludes it. */
 export const SUGGEST_FLOOR = 0.25;
 
 const UNIT_ALIASES: Record<string, string> = {
@@ -206,8 +213,13 @@ function jaccard(a: string[], b: string[]): number {
 export function scoreProduct(item: MatchItem, product: MatchProduct): MatchCandidate | null {
   const matchedOn: string[] = [];
   const failedOn: string[] = [];
+  const differences: MatchDifference[] = [];
 
-  // Hard gate 1 — unit family must be compatible when both sides declare one.
+  // Hard gate — unit family must be compatible when both sides declare one.
+  // A "per metre" item can never be fulfilled by an "each" product, so this
+  // is a real exclusion. A conflicting spec value, below, is not: it's
+  // recorded and scored down instead, so the closest available product still
+  // surfaces with the mismatch spelled out for a human to weigh.
   const itemUnit = canonicalUnit(item.unit);
   const productUnit = canonicalUnit(product.unit);
   if (itemUnit && productUnit && itemUnit !== productUnit) return null;
@@ -218,8 +230,10 @@ export function scoreProduct(item: MatchItem, product: MatchProduct): MatchCandi
     [product.name, product.nameAr ?? "", product.brand ?? "", product.category ?? ""].join(" "),
   );
 
-  // Hard gate 2 — a measurement written in the item must not contradict a
-  // product specification stated in the same unit.
+  // A measurement written in the item that contradicts a product spec stated
+  // in the same unit counts against the score but does not exclude the
+  // product — the exact requested-vs-catalog values are recorded so the
+  // reviewer sees precisely what differs before confirming anything.
   const itemMeasures = extractMeasures(item.description);
   let specHits = 0;
   let specChecks = 0;
@@ -229,12 +243,20 @@ export function scoreProduct(item: MatchItem, product: MatchProduct): MatchCandi
     const sameUnit = itemMeasures.filter((candidate) => candidate.unit === measure.unit);
     if (sameUnit.length === 0) continue;
     specChecks += 1;
-    if (sameUnit.some((candidate) => Math.abs(candidate.value - measure.value) < 1e-6)) {
+    const hit = sameUnit.find((candidate) => Math.abs(candidate.value - measure.value) < 1e-6);
+    if (hit) {
       specHits += 1;
       matchedOn.push(`spec:${spec.key}`);
     } else {
       failedOn.push(`spec:${spec.key}`);
-      return null;
+      const requested = sameUnit[0];
+      if (requested) {
+        differences.push({
+          key: spec.key,
+          requested: `${requested.value}${measure.unit}`,
+          catalog: `${spec.value}${spec.unit ?? ""}`,
+        });
+      }
     }
   }
 
@@ -267,6 +289,7 @@ export function scoreProduct(item: MatchItem, product: MatchProduct): MatchCandi
     score: Number(score.toFixed(4)),
     matchedOn,
     failedOn,
+    differences,
   };
 }
 
@@ -283,7 +306,6 @@ export function rankCandidates(
   return products
     .map((product) => scoreProduct(item, product))
     .filter((candidate): candidate is MatchCandidate => candidate !== null)
-    .filter((candidate) => candidate.score >= SUGGEST_FLOOR)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       const codeA = byId.get(a.productId)?.code ?? "";

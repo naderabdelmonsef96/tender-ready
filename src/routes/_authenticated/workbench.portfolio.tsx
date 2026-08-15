@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { listIntakeTenders } from "@/lib/intake.functions";
+import { SUGGEST_FLOOR } from "@/lib/match-engine";
 import {
   clearMatch,
   decideMatch,
@@ -480,11 +481,27 @@ function Page() {
                                 </p>
                               ) : null}
                             </div>
-                          ) : (match?.matched_on as string[] | null)?.length ? (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {t("portfolio.matchedOn")}:{" "}
-                              {(match?.matched_on as string[]).join(", ")}
-                            </p>
+                          ) : (
+                            <>
+                              {(match?.matched_on as string[] | null)?.length ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {t("portfolio.matchedOn")}:{" "}
+                                  {(match?.matched_on as string[]).join(", ")}
+                                </p>
+                              ) : null}
+                              {match?.note ? (
+                                <p className="mt-1 text-xs text-warning">
+                                  {t("portfolio.differsOn")}: {match.note}
+                                </p>
+                              ) : null}
+                            </>
+                          )}
+                          {match?.score !== null &&
+                          match?.score !== undefined &&
+                          Number(match.score) < SUGGEST_FLOOR ? (
+                            <span className="mt-1 inline-flex rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
+                              {t("portfolio.weakMatch")}
+                            </span>
                           ) : null}
                         </td>
                         <td className="whitespace-nowrap px-2 py-2 tabular-nums text-muted-foreground">

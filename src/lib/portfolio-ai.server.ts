@@ -34,12 +34,12 @@ const AI_CATALOGUE_LIMIT = 300;
 const SYSTEM_PROMPT = [
   "You are a procurement matching assistant for an engineering contractor.",
   "You are given tender BOQ items a deterministic matcher could not link to any catalogue product, plus the organization's active product catalogue.",
-  "For each tender item, decide whether ANY catalogue product is a plausible match for what the item actually is (material, equipment or service), even if the wording differs.",
+  "For each tender item, propose the single closest catalogue product for what the item actually is (material, equipment or service), even if the match is imperfect.",
   "Hard rules:",
   "- Only return a productId that appears in the given catalogue list. Never invent one.",
-  "- If no catalogue product is a plausible match, return productId: null for that item. Do not force a match.",
-  "- confidence is 0..1 and must reflect how sure you are the product is the right one.",
-  "- rationale is a short (under 200 characters) explanation a human reviewer can quickly verify.",
+  "- Always propose the closest available product, even at low confidence. Return productId: null only when the catalogue has nothing in even a remotely related category (e.g. the item is plumbing and the whole catalogue is electrical).",
+  "- Never pretend an imperfect match is exact. confidence is 0..1 and must honestly reflect how close the product really is.",
+  '- rationale is short (under 200 characters) and MUST name the concrete difference in specs, size or rating between what was asked for and the proposed product whenever they are not identical (e.g. "closest available; requested 25mm2, catalogue item is 16mm2"). If the match is exact, say so briefly instead.',
   "- Judge only what the item is, never price, stock or lead time.",
   "- Return ONLY strict JSON matching the schema given by the user.",
 ].join("\n");
@@ -92,7 +92,7 @@ export async function suggestPortfolioMatches(input: {
   }));
 
   const userContent = [
-    "Suggest the best catalogue product for each tender item below, if any is a plausible match.",
+    "Propose the closest catalogue product for each tender item below, even if the match is imperfect.",
     `Catalogue:\n${JSON.stringify(catalogue)}`,
     `Tender items:\n${JSON.stringify(items)}`,
     'Return JSON: {"matches":[{"boqItemId":string,"productId":string|null,"confidence":number,"rationale":string}]}',

@@ -153,6 +153,16 @@ export const runPortfolioMatch = createServerFn({ method: "POST" })
       const best = ranked[0] ?? null;
       if (best) suggested += 1;
       else unmatched += 1;
+      // Spelled out for the human reviewer whenever the closest available
+      // product's own specs conflict with a measurement stated in the item —
+      // e.g. a 25mm2 cable requested against a catalogue entry specced at
+      // 16mm2. Never blocks the suggestion, only annotates it.
+      const differenceNote =
+        best && best.differences.length > 0
+          ? best.differences
+              .map((diff) => `${diff.key}: requested ${diff.requested}, catalogue ${diff.catalog}`)
+              .join("; ")
+          : null;
       return {
         organization_id: data.organizationId,
         tender_id: data.tenderId,
@@ -162,7 +172,7 @@ export const runPortfolioMatch = createServerFn({ method: "POST" })
         score: best?.score ?? null,
         matched_on: (best?.matchedOn ?? []) as never,
         failed_on: (best?.failedOn ?? []) as never,
-        note: null as string | null,
+        note: differenceNote,
         created_by: userId,
       };
     });

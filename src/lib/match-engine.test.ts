@@ -67,13 +67,16 @@ describe("hard gates", () => {
     ).toBeNull();
   });
 
-  it("excludes a product whose stated specification contradicts the item", () => {
-    expect(
-      scoreProduct(
-        { description: "Galvanised steel pipe 150 mm", unit: "m", sectionPath: null },
-        pipe,
-      ),
-    ).toBeNull();
+  it("keeps a product whose stated specification contradicts the item, but records the difference instead of hiding it", () => {
+    const candidate = scoreProduct(
+      { description: "Galvanised steel pipe 150 mm", unit: "m", sectionPath: null },
+      pipe,
+    );
+    expect(candidate).not.toBeNull();
+    expect(candidate?.failedOn).toContain("spec:diameter");
+    expect(candidate?.differences).toEqual([
+      { key: "diameter", requested: "150mm", catalog: "100mm" },
+    ]);
   });
 
   it("keeps a product when the specification agrees", () => {
@@ -109,6 +112,17 @@ describe("rankCandidates", () => {
         [pump, pipe],
       ),
     ).toEqual([]);
+  });
+
+  it("still surfaces the closest available product when its specs conflict", () => {
+    const ranked = rankCandidates(
+      { description: "Galvanised steel pipe 150 mm", unit: "m", sectionPath: null },
+      [pump, pipe],
+    );
+    expect(ranked[0]?.productId).toBe("p2");
+    expect(ranked[0]?.differences).toEqual([
+      { key: "diameter", requested: "150mm", catalog: "100mm" },
+    ]);
   });
 
   it("is deterministic across repeated runs", () => {
