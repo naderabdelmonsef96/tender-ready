@@ -201,6 +201,8 @@ export const savePricingLine = createServerFn({ method: "POST" })
       local_charges: localAmount.toNumber(),
       landing_cost: landingCost.toNumber(),
       margin_percent: data.marginPercent,
+      taxable: data.taxable,
+      vat_percent: data.vatPercent ?? null,
       unit_price: unitPrice.toNumber(),
       unit_price_currency: landedCurrency,
       total_price: totalPrice.toNumber(),
@@ -521,7 +523,9 @@ export const releaseQuotation = createServerFn({ method: "POST" })
     const [lines, boqItems, settings] = await Promise.all([
       supabase
         .from("pricing_lines")
-        .select("id, boq_item_id, unit_price, unit_price_currency, total_price")
+        .select(
+          "id, boq_item_id, unit_price, unit_price_currency, total_price, taxable, vat_percent",
+        )
         .eq("organization_id", data.organizationId)
         .eq("tender_id", task.data.tender_id),
       supabase
@@ -554,11 +558,18 @@ export const releaseQuotation = createServerFn({ method: "POST" })
     };
 
     let subtotal = new Decimal(0);
+    let vatAmount = new Decimal(0);
     const quotationLineRows = lines.data.map((line) => {
       const boq = boqById.get(line.boq_item_id);
       const convertedTotal = convert(line.total_price, line.unit_price_currency);
       const convertedUnit = convert(line.unit_price, line.unit_price_currency);
       subtotal = subtotal.plus(convertedTotal);
+      // Exempt lines never contribute VAT; a line without its own rate
+      // inherits the blanket rate entered on this release.
+      if (line.taxable) {
+        const rate = line.vat_percent ?? data.vatPercent;
+        vatAmount = vatAmount.plus(convertedTotal.times(rate / 100));
+      }
       return {
         organization_id: data.organizationId,
         boq_item_id: line.boq_item_id,
@@ -575,9 +586,7 @@ export const releaseQuotation = createServerFn({ method: "POST" })
 
     const discount = new Decimal(data.discount ?? 0);
     const otherCharges = new Decimal(data.otherCharges ?? 0);
-    const taxable = subtotal.minus(discount);
-    const vatAmount = taxable.times(data.vatPercent / 100);
-    const total = taxable.plus(vatAmount).plus(otherCharges);
+    const total = subtotal.minus(discount).plus(vatAmount).plus(otherCharges);
 
     const year = new Date().getFullYear();
     const countThisYear = await supabase

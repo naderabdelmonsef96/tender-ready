@@ -13,6 +13,8 @@ export const savePricingLineSchema = z.object({
   localMode: z.enum(["value", "percent"]).default("value"),
   localInput: z.number().min(0).default(0),
   marginPercent: z.number().min(0).lt(100),
+  taxable: z.boolean().default(true),
+  vatPercent: z.number().min(0).max(100).optional().nullable(),
   note: z.string().trim().max(1000).optional().nullable(),
   version: z.number().int().positive().optional(),
 });

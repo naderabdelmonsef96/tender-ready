@@ -1209,11 +1209,13 @@ export type Database = {
           margin_percent: number;
           note: string | null;
           organization_id: string;
+          taxable: boolean;
           tender_id: string;
           total_price: number;
           unit_price: number;
           unit_price_currency: string;
           updated_at: string;
+          vat_percent: number | null;
           version: number;
         };
         Insert: {
@@ -1238,11 +1240,13 @@ export type Database = {
           margin_percent?: number;
           note?: string | null;
           organization_id: string;
+          taxable?: boolean;
           tender_id: string;
           total_price: number;
           unit_price: number;
           unit_price_currency: string;
           updated_at?: string;
+          vat_percent?: number | null;
           version?: number;
         };
         Update: {
@@ -1267,11 +1271,13 @@ export type Database = {
           margin_percent?: number;
           note?: string | null;
           organization_id?: string;
+          taxable?: boolean;
           tender_id?: string;
           total_price?: number;
           unit_price?: number;
           unit_price_currency?: string;
           updated_at?: string;
+          vat_percent?: number | null;
           version?: number;
         };
         Relationships: [

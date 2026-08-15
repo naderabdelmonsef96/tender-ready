@@ -19,6 +19,7 @@ import {
 import { GovernanceTracker } from "@/components/governance-tracker";
 import { useWorkspace } from "@/components/workspace-provider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,6 +80,8 @@ function Page() {
   const [localByItem, setLocalByItem] = useState<Record<string, string>>({});
   const [costAmountByItem, setCostAmountByItem] = useState<Record<string, string>>({});
   const [costCurrencyByItem, setCostCurrencyByItem] = useState<Record<string, string>>({});
+  const [taxableByItem, setTaxableByItem] = useState<Record<string, boolean>>({});
+  const [vatPercentByItem, setVatPercentByItem] = useState<Record<string, string>>({});
   const [freightModeByItem, setFreightModeByItem] = useState<Record<string, "value" | "percent">>(
     {},
   );
@@ -294,6 +297,20 @@ function Page() {
     return existing?.local_mode === "percent" ? "percent" : "value";
   }
 
+  function taxableValue(item: BoardItem): boolean {
+    const draft = taxableByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing ? existing.taxable : true;
+  }
+
+  function vatPercentValue(item: BoardItem): string {
+    const draft = vatPercentByItem[item.id];
+    if (draft !== undefined) return draft;
+    const existing = lineByItem.get(item.id);
+    return existing?.vat_percent != null ? String(existing.vat_percent) : "";
+  }
+
   function landedCurrencyFor(basisCurrency: string, fxRate: number): string {
     return fxRate === 1 ? basisCurrency : (data?.tender.currency ?? basisCurrency);
   }
@@ -369,6 +386,15 @@ function Page() {
       toast.error(t("pricing.invalidCharges"));
       return;
     }
+    const vatPercentRaw = vatPercentValue(item);
+    let vatPercent: number | null = null;
+    if (vatPercentRaw.trim() !== "") {
+      vatPercent = Number(vatPercentRaw);
+      if (!Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > 100) {
+        toast.error(t("pricing.invalidVatPercent"));
+        return;
+      }
+    }
     saveMutation.mutate({
       data: {
         organizationId: activeOrganizationId ?? "",
@@ -383,6 +409,8 @@ function Page() {
         localMode: localModeValue(item),
         localInput: local,
         marginPercent: margin,
+        taxable: taxableValue(item),
+        vatPercent,
         version: lineByItem.get(item.id)?.version,
       },
     });
@@ -507,6 +535,12 @@ function Page() {
                     </th>
                     <th scope="col" className="px-2 py-2 text-start">
                       {t("pricing.marginPercent")}
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-start">
+                      {t("pricing.taxable")}
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-start">
+                      {t("pricing.vatPercent")}
                     </th>
                     <th scope="col" className="px-2 py-2 text-start">
                       {t("pricing.unitPrice")}
@@ -717,6 +751,52 @@ function Page() {
                                 }))
                               }
                             />
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
+                          {editable ? (
+                            <Checkbox
+                              aria-label={t("pricing.taxable")}
+                              checked={taxableValue(item)}
+                              onCheckedChange={(checked) =>
+                                setTaxableByItem((current) => ({
+                                  ...current,
+                                  [item.id]: checked === true,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {existingLine
+                                ? existingLine.taxable
+                                  ? t("common.yes")
+                                  : t("common.no")
+                                : "—"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2" dir="ltr">
+                          {editable ? (
+                            <Input
+                              aria-label={t("pricing.vatPercent")}
+                              className="h-8 w-20"
+                              inputMode="decimal"
+                              placeholder={t("pricing.vatInherit")}
+                              disabled={!taxableValue(item)}
+                              value={vatPercentValue(item)}
+                              onChange={(event) =>
+                                setVatPercentByItem((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {existingLine?.taxable
+                                ? (existingLine.vat_percent ?? t("pricing.vatInherit"))
+                                : "—"}
+                            </span>
                           )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-2 text-xs tabular-nums" dir="ltr">
