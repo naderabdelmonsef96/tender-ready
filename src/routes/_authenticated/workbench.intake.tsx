@@ -156,7 +156,6 @@ function Page() {
     if (!activeOrganizationId) return;
     const form = new FormData(event.currentTarget);
     const clientId = String(form.get("clientId") ?? "");
-    const estimated = String(form.get("estimatedValue") ?? "").trim();
     createMutation.mutate({
       data: {
         organizationId: activeOrganizationId,
@@ -168,7 +167,6 @@ function Page() {
         projectLocation: String(form.get("projectLocation") ?? "") || null,
         submissionDeadline: String(form.get("submissionDeadline") ?? "") || null,
         currency: String(form.get("currency") ?? baseCurrency).toUpperCase(),
-        estimatedValue: estimated ? Number(estimated) : null,
         notes: String(form.get("notes") ?? "") || null,
       },
     });
@@ -394,18 +392,6 @@ function Page() {
                 dir="ltr"
                 maxLength={3}
                 defaultValue={baseCurrency}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="estimatedValue">{t("intake.estimatedValue")}</Label>
-              <Input
-                id="estimatedValue"
-                name="estimatedValue"
-                type="number"
-                min="0"
-                step="0.01"
-                dir="ltr"
                 className="mt-1"
               />
             </div>

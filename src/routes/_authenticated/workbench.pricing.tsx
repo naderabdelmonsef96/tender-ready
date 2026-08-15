@@ -168,18 +168,6 @@ function Page() {
   }, [data]);
 
   const pending = (data?.items ?? []).filter((item) => !lineByItem.has(item.id)).length;
-  const pricedSoFar = useMemo(() => {
-    let amount = new Decimal(0);
-    let otherCurrencyCount = 0;
-    for (const line of data?.lines ?? []) {
-      if (line.unit_price_currency === data?.tender.currency) {
-        amount = amount.plus(line.total_price);
-      } else {
-        otherCurrencyCount += 1;
-      }
-    }
-    return { amount, otherCurrencyCount };
-  }, [data]);
   const canPrice =
     data?.myRole === "org_admin" ||
     data?.myRole === "proposal_engineer" ||
@@ -500,7 +488,7 @@ function Page() {
         </Panel>
       ) : data ? (
         <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label={t("register.itemsTab")} value={data.items.length} />
             <StatCard label={t("pricing.priced")} value={data.items.length - pending} tone="info" />
             <StatCard
@@ -513,29 +501,6 @@ function Page() {
               value={activeTask ? t(`decision.${activeTask.state}`) : t("common.none")}
               tone="info"
             />
-            {Boolean(data.tender.estimated_value) && (
-              <StatCard
-                label={t("pricing.tenderValue")}
-                value={formatMoney(data.tender.estimated_value, data.tender.currency, language)}
-                hint={
-                  t("pricing.pricedSoFar", {
-                    amount: formatMoney(
-                      pricedSoFar.amount.toString(),
-                      data.tender.currency,
-                      language,
-                    ),
-                    percent: pricedSoFar.amount
-                      .dividedBy(data.tender.estimated_value as number)
-                      .times(100)
-                      .toDecimalPlaces(0)
-                      .toString(),
-                  }) +
-                  (pricedSoFar.otherCurrencyCount > 0
-                    ? ` · ${t("pricing.otherCurrencyNote", { count: pricedSoFar.otherCurrencyCount })}`
-                    : "")
-                }
-              />
-            )}
           </div>
 
           {data.unresolvedCostCount > 0 && (

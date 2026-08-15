@@ -21,9 +21,7 @@ export const getPricingBoard = createServerFn({ method: "GET" })
     const [tender, items, routes, quotes, lines, tasks, membership, stage] = await Promise.all([
       supabase
         .from("tenders")
-        .select(
-          "id, reference, title, title_ar, currency, current_stage, stage_state, estimated_value",
-        )
+        .select("id, reference, title, title_ar, currency, current_stage, stage_state")
         .eq("organization_id", data.organizationId)
         .eq("id", data.tenderId)
         .maybeSingle(),

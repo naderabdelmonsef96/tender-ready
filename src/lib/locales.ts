@@ -279,7 +279,6 @@ export const en = {
     location: "Project location",
     deadline: "Submission deadline",
     currency: "Currency",
-    estimatedValue: "Tender value",
     notes: "Internal notes",
     files: "Tender files",
     filesHint:
@@ -557,9 +556,6 @@ export const en = {
     submitted: "Submitted for commercial approval.",
     priced: "Priced",
     pending: "Awaiting price",
-    tenderValue: "Tender value",
-    pricedSoFar: "Priced so far: {{amount}} ({{percent}}%)",
-    otherCurrencyNote: "{{count}} item(s) in other currencies not included",
     unresolvedCost:
       "{{count}} item(s) still have no cost basis — confirm their supply route first.",
     costBasis: "Cost basis",
@@ -921,7 +917,6 @@ export const ar: typeof en = {
     location: "موقع المشروع",
     deadline: "الموعد النهائي للتقديم",
     currency: "العملة",
-    estimatedValue: "قيمة المناقصة",
     notes: "ملاحظات داخلية",
     files: "ملفات العطاء",
     filesHint:
@@ -1197,9 +1192,6 @@ export const ar: typeof en = {
     submitted: "تم الإرسال للاعتماد التجاري.",
     priced: "مُسعَّر",
     pending: "بانتظار التسعير",
-    tenderValue: "قيمة المناقصة",
-    pricedSoFar: "المُسعَّر حتى الآن: {{amount}} ({{percent}}%)",
-    otherCurrencyNote: "{{count}} بند بعملة مختلفة غير محسوب",
     unresolvedCost: "{{count}} بند بلا أساس تكلفة بعد — أكّد مسار توريده أولًا.",
     costBasis: "أساس التكلفة",
     costBasisCurrency: "العملة",

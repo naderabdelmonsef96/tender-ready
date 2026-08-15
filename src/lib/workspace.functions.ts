@@ -18,11 +18,11 @@ export const getDashboard = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
-    const [tendersResult, flagsResult] = await Promise.all([
+    const [tendersResult, flagsResult, quotationsResult] = await Promise.all([
       supabase
         .from("tenders")
         .select(
-          "id, reference, title, title_ar, project_location, submission_deadline, currency, estimated_value, current_stage, stage_state, status, updated_at, clients(id, name, name_ar)",
+          "id, reference, title, title_ar, project_location, submission_deadline, currency, current_stage, stage_state, status, updated_at, clients(id, name, name_ar)",
         )
         .eq("organization_id", data.organizationId)
         .order("submission_deadline", { ascending: true, nullsFirst: false }),
@@ -30,32 +30,52 @@ export const getDashboard = createServerFn({ method: "GET" })
         .from("feature_flags")
         .select("flag_key, enabled")
         .eq("organization_id", data.organizationId),
+      // Tender value on the dashboard is the real released quotation total,
+      // never a pre-bid guess — a tender with no released quotation shows
+      // no value at all rather than someone's early estimate.
+      supabase
+        .from("quotations")
+        .select("tender_id, total, currency, released_at")
+        .eq("organization_id", data.organizationId)
+        .order("released_at", { ascending: false }),
     ]);
 
     if (tendersResult.error) throw new Error(tendersResult.error.message);
+    if (quotationsResult.error) throw new Error(quotationsResult.error.message);
+
+    const latestQuotationByTender = new Map<string, { total: number; currency: string }>();
+    for (const q of quotationsResult.data ?? []) {
+      if (!latestQuotationByTender.has(q.tender_id)) {
+        latestQuotationByTender.set(q.tender_id, { total: q.total, currency: q.currency });
+      }
+    }
 
     const tenders = tendersResult.data ?? [];
     const now = Date.now();
     const fourteenDays = now + 14 * 24 * 60 * 60 * 1000;
 
     return {
-      tenders: tenders.map((t) => ({
-        id: t.id,
-        reference: t.reference,
-        title: t.title,
-        titleAr: t.title_ar,
-        location: t.project_location,
-        deadline: t.submission_deadline,
-        currency: t.currency,
-        estimatedValue: t.estimated_value,
-        stage: t.current_stage,
-        stageState: t.stage_state,
-        status: t.status,
-        updatedAt: t.updated_at,
-        client: t.clients
-          ? { id: t.clients.id, name: t.clients.name, nameAr: t.clients.name_ar }
-          : null,
-      })),
+      tenders: tenders.map((t) => {
+        const quotation = latestQuotationByTender.get(t.id);
+        return {
+          id: t.id,
+          reference: t.reference,
+          title: t.title,
+          titleAr: t.title_ar,
+          location: t.project_location,
+          deadline: t.submission_deadline,
+          currency: t.currency,
+          tenderValue: quotation?.total ?? null,
+          tenderValueCurrency: quotation?.currency ?? null,
+          stage: t.current_stage,
+          stageState: t.stage_state,
+          status: t.status,
+          updatedAt: t.updated_at,
+          client: t.clients
+            ? { id: t.clients.id, name: t.clients.name, nameAr: t.clients.name_ar }
+            : null,
+        };
+      }),
       summary: {
         open: tenders.filter((t) => t.status === "open").length,
         awaitingApproval: tenders.filter(

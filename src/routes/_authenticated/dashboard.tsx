@@ -166,7 +166,13 @@ function DashboardPage() {
                             )}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-end tabular-nums">
-                            {formatMoney(tender.estimatedValue, tender.currency, language)}
+                            {tender.tenderValue != null && tender.tenderValueCurrency
+                              ? formatMoney(
+                                  tender.tenderValue,
+                                  tender.tenderValueCurrency,
+                                  language,
+                                )
+                              : "—"}
                           </td>
                         </tr>
                       );
