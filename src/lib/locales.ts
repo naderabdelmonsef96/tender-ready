@@ -510,6 +510,10 @@ export const en = {
     deactivate: "Deactivate",
     activate: "Activate",
     deactivated: "Product deactivated.",
+    hardDelete: "Delete",
+    confirmHardDelete:
+      "Permanently delete this product? This can't be undone. Products used in any tender can't be deleted — deactivate those instead.",
+    hardDeleted: "Product permanently deleted.",
     empty: "No products yet. Add your first product to enable matching.",
     inactive: "Inactive",
     onlyAdmin: "Catalogue management is limited to org admins and product managers.",
@@ -1147,6 +1151,10 @@ export const ar: typeof en = {
     deactivate: "إيقاف",
     activate: "تفعيل",
     deactivated: "تم إيقاف المنتج.",
+    hardDelete: "حذف نهائي",
+    confirmHardDelete:
+      "حذف هذا المنتج نهائيًا؟ لا يمكن التراجع عن هذا. المنتجات المستخدمة في أي عطاء لا يمكن حذفها — أوقفها بدلًا من ذلك.",
+    hardDeleted: "تم حذف المنتج نهائيًا.",
     empty: "لا توجد منتجات بعد. أضف أول منتج لتفعيل المطابقة.",
     inactive: "موقوف",
     onlyAdmin: "إدارة الكتالوج متاحة لمسؤول المؤسسة أو مدير المنتج.",

@@ -37,6 +37,7 @@ import { formatMoney } from "@/lib/format";
 import {
   deleteCatalogueProduct,
   listCatalogueProducts,
+  permanentlyDeleteCatalogueProduct,
   upsertCatalogueProduct,
 } from "@/lib/portfolio.functions";
 
@@ -115,6 +116,7 @@ function Page() {
   const fetchProducts = useServerFn(listCatalogueProducts);
   const save = useServerFn(upsertCatalogueProduct);
   const deactivate = useServerFn(deleteCatalogueProduct);
+  const hardDelete = useServerFn(permanentlyDeleteCatalogueProduct);
 
   const [form, setForm] = useState<FormState | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -155,6 +157,16 @@ function Page() {
     mutationFn: deactivate,
     onSuccess: () => {
       toast.success(t("catalogue.deactivated"));
+      void queryClient.invalidateQueries({ queryKey: ["catalogue"] });
+      void queryClient.invalidateQueries({ queryKey: ["portfolio-board"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const hardDeleteMutation = useMutation({
+    mutationFn: hardDelete,
+    onSuccess: () => {
+      toast.success(t("catalogue.hardDeleted"));
       void queryClient.invalidateQueries({ queryKey: ["catalogue"] });
       void queryClient.invalidateQueries({ queryKey: ["portfolio-board"] });
     },
@@ -531,6 +543,23 @@ function Page() {
                                   {product.is_active
                                     ? t("catalogue.deactivate")
                                     : t("catalogue.activate")}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:text-destructive"
+                                  disabled={hardDeleteMutation.isPending}
+                                  onClick={() => {
+                                    if (!window.confirm(t("catalogue.confirmHardDelete"))) return;
+                                    hardDeleteMutation.mutate({
+                                      data: {
+                                        organizationId: activeOrganizationId ?? "",
+                                        productId: product.id,
+                                      },
+                                    });
+                                  }}
+                                >
+                                  {t("catalogue.hardDelete")}
                                 </Button>
                               </div>
                             ) : (

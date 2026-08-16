@@ -685,3 +685,57 @@ export const deleteCatalogueProduct = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/**
+ * Permanently removes a product row (specs and stock positions cascade with
+ * it). Refuses when any tender has ever referenced this product — those
+ * rows would otherwise silently lose their product link — so a used product
+ * can only be deactivated, never hard-deleted.
+ */
+export const permanentlyDeleteCatalogueProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => deleteProductSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { writeAudit } = await import("@/lib/intake-db.server");
+
+    const [matches, routes] = await Promise.all([
+      supabase
+        .from("portfolio_matches")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", data.organizationId)
+        .eq("product_id", data.productId),
+      supabase
+        .from("sourcing_routes")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", data.organizationId)
+        .eq("product_id", data.productId),
+    ]);
+    if (matches.error) throw new Error(matches.error.message);
+    if (routes.error) throw new Error(routes.error.message);
+
+    const usageCount = (matches.count ?? 0) + (routes.count ?? 0);
+    if (usageCount > 0) {
+      throw new Error(
+        `This product is referenced by ${usageCount} tender record(s) — deactivate it instead so those records keep their history.`,
+      );
+    }
+
+    const { error } = await supabase
+      .from("catalogue_products")
+      .delete()
+      .eq("organization_id", data.organizationId)
+      .eq("id", data.productId);
+    if (error) throw new Error(error.message);
+
+    await writeAudit(supabase, {
+      organizationId: data.organizationId,
+      actorId: userId,
+      action: "catalogue_product.deleted",
+      objectType: "catalogue_product",
+      objectId: data.productId,
+      isMaterial: true,
+    });
+
+    return { ok: true };
+  });
