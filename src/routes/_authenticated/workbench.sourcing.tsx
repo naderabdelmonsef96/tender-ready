@@ -369,7 +369,7 @@ function Page() {
                     const quotes = quotesByItem.get(item.id) ?? [];
                     const inPortfolio = match?.state === "confirmed";
                     const allowed: RouteKind[] = inPortfolio
-                      ? ["ex_stock", "import"]
+                      ? ["ex_stock", "import", "local_supplier", "foreign_rfq"]
                       : ["local_supplier", "foreign_rfq"];
                     return (
                       <tr key={item.id} className="border-b border-border/70 align-top">
